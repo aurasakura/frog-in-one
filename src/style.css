@@ -1,0 +1,992 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: sans-serif;
+}
+
+canvas.game {
+  display: block;
+  touch-action: none; /* let pointer drags aim instead of scrolling/zooming */
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* --- HUD --- */
+
+.hud {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 16px;
+  max-width: calc(100vw - 96px);
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.35);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  user-select: none;
+}
+
+.hud .over {
+  color: #FFB4A8;
+}
+
+/* Powerup panel: right edge, held powerup icon with its E key badge */
+
+.powerup-panel {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border: none;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.35);
+  color: white;
+  font: bold 0.9rem sans-serif;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  user-select: none;
+}
+
+.powerup-panel.empty {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.powerup-slot {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 4px solid #1A1A1A;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+}
+
+.powerup-panel.empty .powerup-slot {
+  border: 3px dashed rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.powerup-panel.armed .powerup-slot {
+  box-shadow: 0 0 0 3px white, 0 0 18px 6px #E69F00;
+}
+
+.powerup-slot img {
+  width: 48px;
+  height: 48px;
+}
+
+/* The key to press, as a keycap on the slot's corner */
+.powerup-key {
+  position: absolute;
+  right: -10px;
+  bottom: -8px;
+  min-width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border: 2px solid #1A1A1A;
+  border-bottom-width: 4px;
+  border-radius: 7px;
+  background: white;
+  color: #1A1A1A;
+  font: bold 1rem sans-serif;
+  text-shadow: none;
+}
+
+.powerup-panel.empty .powerup-key {
+  opacity: 0.6;
+}
+
+.powerup-name {
+  max-width: 96px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .powerup-panel {
+    top: auto;
+    bottom: 80px;
+    transform: none;
+  }
+
+  .powerup-slot {
+    width: 60px;
+    height: 60px;
+  }
+
+  .powerup-slot img {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Mute and pause, top right */
+
+.corner-buttons {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 2; /* stays usable above menus (mute) */
+}
+
+.round-button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.round-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+.mute-button .icon-muted,
+.mute-button.muted .icon-sound {
+  display: none;
+}
+
+.mute-button.muted .icon-muted {
+  display: block;
+}
+
+/* Hide the in-game HUD in menus and cutscenes (body[data-state] is set by
+   gameState.js); the mute button stays */
+body[data-state="title"] :is(.hud, .powerup-panel, .pause-button, .message),
+body[data-state="levelSelect"] :is(.hud, .powerup-panel, .pause-button, .message),
+body[data-state="intro"] :is(.hud, .powerup-panel, .pause-button, .message),
+body[data-state="outro"] :is(.hud, .powerup-panel, .pause-button, .message) {
+  display: none;
+}
+
+body:is([data-state="paused"], [data-state="levelComplete"]) .pause-button {
+  display: none;
+}
+
+/* Tips and the walkthrough only show while playing */
+body:not(:is([data-state="aiming"], [data-state="flying"], [data-state="sliding"])) :is(.tip-card, .tutorial) {
+  display: none;
+}
+
+/* First-touch tip: a card on the left, sliding in */
+.tip-card {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(260px, 60vw);
+  padding: 14px 16px;
+  border-left: 6px solid #F2C14E;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tip-card.show {
+  animation: tip-in 0.35s ease-out;
+}
+
+@keyframes tip-in {
+  from { opacity: 0; transform: translate(-20px, -50%); }
+  to { opacity: 1; transform: translate(0, -50%); }
+}
+
+.tip-title {
+  margin: 0 0 4px;
+  font-weight: bold;
+  font-size: 1.15rem;
+  color: #F2C14E;
+}
+
+.tip-text {
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Controls walkthrough: a pill near the bottom, above the power bar */
+.tutorial {
+  position: absolute;
+  bottom: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  padding: 10px 12px 10px 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-weight: bold;
+  user-select: none;
+}
+
+.tutorial.next {
+  animation: tutorial-pop 0.35s ease-out;
+}
+
+@keyframes tutorial-pop {
+  from { transform: translateX(-50%) scale(0.9); opacity: 0.4; }
+  to { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+.tutorial-step {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #F2C14E;
+  color: #3B2412;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.tutorial-skip {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Level intro: no top bar, powerup panel or pause button (which can't be
+   used yet) while the title shows */
+body[data-state="levelIntro"] :is(.hud, .powerup-panel, .pause-button) {
+  display: none;
+}
+
+/* Results screen: just the title, Froggy and the results */
+body[data-state="levelComplete"] :is(.hud, .powerup-panel) {
+  display: none;
+}
+
+.message {
+  position: absolute;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2.5rem;
+  font-weight: bold;
+  white-space: nowrap;
+  color: #D6EEFF;
+  text-shadow: 0 2px 6px rgba(0, 40, 80, 0.7);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+}
+
+.message.show {
+  animation: message-pop 1.4s ease-out forwards;
+}
+
+@keyframes message-pop {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.6); }
+  15% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+  25% { transform: translateX(-50%) scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Level intro: big title in the middle of the screen, par and target below */
+.level-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 20px 36px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.4);
+  color: white;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  user-select: none;
+  animation: banner-in 0.5s ease-out;
+}
+
+@keyframes banner-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.level-banner h2 {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 7vw, 3.4rem);
+}
+
+.level-banner p {
+  margin: 0;
+  font-size: clamp(0.95rem, 2.8vw, 1.2rem);
+  opacity: 0.9;
+}
+
+/* --- Overlays (level complete, pause, outro) --- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  text-align: center;
+  user-select: none;
+}
+
+.overlay h1 {
+  margin: 0;
+  font-size: clamp(2rem, 8vw, 4rem);
+}
+
+.overlay p {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.stars {
+  font-size: clamp(3rem, 14vw, 5rem);
+  letter-spacing: 0.1em;
+}
+
+.star {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.star.earned {
+  color: #FFD54A;
+  text-shadow: 0 0 16px rgba(255, 213, 74, 0.7);
+}
+
+.star-reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  line-height: 1.7;
+}
+
+.star-reasons li::before {
+  content: "☆ ";
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.star-reasons li.earned::before {
+  content: "★ ";
+  color: #FFD54A;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.overlay button {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 999px;
+  background: white;
+  color: #1B5E20;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.overlay button.secondary {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.buttons.stacked {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 220px;
+}
+
+.overlay button:not(.wood):hover {
+  background: #E8F5E9;
+}
+
+/* --- Aim guide power bar --- */
+
+.power-bar {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  width: min(260px, 60vw);
+  height: 14px;
+  transform: translateX(-50%);
+  border: 2px solid white;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.power-bar-fill {
+  height: 100%;
+  width: 0;
+}
+
+/* --- Wooden buttons (title screen and tutorial) --- */
+
+/* Planks: warm brown with fine grain (an SVG noise stretched sideways),
+   a lighter top edge, a dark rim and a thick bottom edge it presses into.
+   (Also listed under .overlay so it wins over the plain overlay buttons.) */
+.wood,
+.overlay button.wood {
+  --wood-dark: #4A2A12;
+  position: relative;
+  padding: 14px 34px;
+  border: 3px solid var(--wood-dark);
+  border-radius: 12px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='80'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.22' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.28 0 0 0 0 0.14 0 0 0 0 0.05 1.6 0 0 0 -0.62'/%3E%3C/filter%3E%3Crect width='300' height='80' filter='url(%23g)'/%3E%3C/svg%3E"),
+    linear-gradient(#C68A52, #A86B38 55%, #93582B);
+  background-size: 300px 80px, auto;
+  color: #FFF3D6;
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-size: 1.3rem;
+  font-weight: normal;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 0 var(--wood-dark);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 235, 200, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+    0 5px 0 var(--wood-dark),
+    0 9px 16px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
+}
+
+/* Nail heads at each end */
+.wood::before,
+.wood::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #D9D2C3, #6B6359);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.wood::before {
+  left: 10px;
+}
+
+.wood::after {
+  right: 10px;
+}
+
+.wood:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.wood:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 235, 200, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 0 var(--wood-dark),
+    0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.wood:disabled {
+  filter: saturate(0.4) brightness(0.85);
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.wood:focus-visible {
+  outline: 3px solid #FFE08A;
+  outline-offset: 4px;
+}
+
+/* --- Title screen: menu on the left, Froggy (3D) on the right --- */
+
+.title-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  box-sizing: border-box;
+  background: linear-gradient(90deg, rgba(10, 40, 30, 0.45), rgba(10, 40, 30, 0.12) 45%, rgba(10, 40, 30, 0) 60%);
+  color: white;
+  user-select: none;
+}
+
+/* Centred on the 1/4 mark from the left */
+.title-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(360px, 100%);
+  margin-left: 25%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.game-title {
+  margin: 0;
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-weight: normal;
+  font-size: clamp(3.2rem, 9vw, 5.6rem);
+  line-height: 0.95;
+  color: #B9F27C;
+  -webkit-text-stroke: 2px #1F5E24;
+  text-shadow: 0 5px 0 #1F5E24, 0 10px 24px rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.02em;
+}
+
+.tagline {
+  margin: 12px 0 22px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.name-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: 280px;
+}
+
+.name-label {
+  margin-bottom: 6px;
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* A cream name plate set into a wooden frame */
+.name-input {
+  padding: 12px 14px;
+  border: 4px solid #8A5530;
+  border-radius: 10px;
+  background: #FFF6E3;
+  color: #3B2412;
+  font: bold 1.15rem sans-serif;
+  text-align: center;
+  box-shadow: inset 0 3px 6px rgba(80, 45, 15, 0.25), 0 3px 0 #4A2A12;
+  outline: none;
+}
+
+.name-input::placeholder {
+  color: #B39675;
+  font-weight: normal;
+}
+
+.name-input:focus {
+  border-color: #B9F27C;
+}
+
+.name-form .buttons {
+  margin-top: 22px;
+  gap: 16px;
+  min-width: 0;
+}
+
+.name-hint {
+  margin: 14px 0 0;
+  font-size: 0.95rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.name-form.named .name-hint {
+  visibility: hidden;
+}
+
+/* Tall, narrow screens: Froggy in the top half, the menu below */
+@media (max-aspect-ratio: 9/10) {
+  .title-screen {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px 16px 6vh;
+    background: linear-gradient(rgba(10, 40, 30, 0) 35%, rgba(10, 40, 30, 0.45));
+  }
+
+  .title-menu {
+    margin-left: 0;
+    transform: none;
+  }
+
+  .game-title {
+    font-size: clamp(2.6rem, 13vw, 4rem);
+  }
+
+  .tagline {
+    margin-bottom: 14px;
+  }
+
+  .name-form .buttons {
+    margin-top: 16px;
+    gap: 12px;
+  }
+}
+
+/* --- Tutorial (How to Play) --- */
+
+.how-to-play {
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding: 32px 16px;
+  background: rgba(10, 40, 30, 0.8);
+}
+
+.how-to-play h1 {
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-weight: normal;
+  color: #B9F27C;
+  text-shadow: 0 4px 0 #1F5E24;
+}
+
+.how-to-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(900px, 100%);
+}
+
+.how-to-section h2 {
+  margin: 0 0 10px;
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-weight: normal;
+  font-size: 1.4rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  color: #F2C14E;
+}
+
+.how-to-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+/* Each card is a little sign: the sign's drawing, a title and what it does */
+.how-to-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 14px 14px;
+  border: 3px solid #6D4C2F;
+  border-radius: 12px;
+  background: #C8955C;
+  color: #3B2412;
+  box-shadow: 0 4px 0 #4A2A12;
+}
+
+.how-to-icon {
+  width: 120px;
+  height: 96px;
+}
+
+.how-to-card h3 {
+  margin: 4px 0 4px;
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-weight: normal;
+  font-size: 1.2rem;
+  letter-spacing: 0.03em;
+}
+
+.how-to-card p {
+  margin: 0;
+  font-size: 0.95rem !important;
+  line-height: 1.35;
+}
+
+.how-to-play .buttons {
+  margin: 20px 0 8px;
+}
+
+/* --- Level select --- */
+
+.level-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  width: min(860px, 100%);
+}
+
+.level-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px !important;
+  border-radius: 16px !important;
+  color: #1B5E20 !important;
+}
+
+.level-card:disabled {
+  background: rgba(255, 255, 255, 0.35) !important;
+  color: rgba(0, 0, 0, 0.55) !important;
+  cursor: not-allowed;
+}
+
+.level-number {
+  font-size: 2rem;
+}
+
+.level-name {
+  font-size: 1rem;
+}
+
+.level-stars {
+  font-size: 1.4rem;
+  color: #F2B705;
+  letter-spacing: 0.1em;
+}
+
+.level-card:disabled .level-stars {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.level-note {
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
+/* --- Cutscenes --- */
+
+.cutscene {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cutscene-text {
+  position: absolute;
+  left: 50%;
+  bottom: 70px;
+  transform: translateX(-50%) translateY(10px);
+  width: min(640px, calc(100% - 32px));
+  box-sizing: border-box;
+  margin: 0;
+  padding: 16px 22px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: clamp(1rem, 3.5vw, 1.4rem);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.4s, transform 0.4s;
+}
+
+.cutscene-text.visible {
+  opacity: 1;
+  transform: translateX(-50%);
+}
+
+.cutscene-skip {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* Stars screen: "Level complete!" at the top, the results at the bottom,
+   and the victory close-up of Froggy in view between them */
+.level-complete {
+  justify-content: space-between;
+  padding: 9vh 16px 5vh;
+  background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.7));
+}
+
+.level-complete h1 {
+  font-size: clamp(2rem, 7vw, 3.6rem);
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+}
+
+.complete-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Outro end screen: text at the top so Froggy and his wife stay in view */
+.outro {
+  justify-content: flex-start;
+  padding-top: 10vh;
+  background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 55%);
+}
+
+.outro-total {
+  font-size: 2rem !important;
+  color: #FFD54A;
+}
+
+
+/* Outro: Play Again and Level Select side by side, Leaderboard centred
+   below, all the same size */
+.outro-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, min(240px, calc(50vw - 24px)));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.outro-buttons .open-leaderboard {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(240px, calc(50vw - 24px));
+}
+
+.outro-buttons button.wood {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+/* --- Leaderboard --- */
+
+.leaderboard {
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding: 32px 16px;
+  background: rgba(10, 40, 30, 0.85);
+}
+
+.leaderboard h1 {
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-weight: normal;
+  color: #B9F27C;
+  text-shadow: 0 4px 0 #1F5E24;
+}
+
+.leaderboard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.overlay button.leaderboard-tab {
+  padding: 8px 16px;
+  border: 2px solid #6D4C2F;
+  border-radius: 999px;
+  background: rgba(200, 149, 92, 0.25);
+  color: #FFF3D6;
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-weight: normal;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+.overlay button.leaderboard-tab:hover {
+  background: rgba(200, 149, 92, 0.45);
+}
+
+.overlay button.leaderboard-tab.selected {
+  background: #C8955C;
+  color: #3B2412;
+}
+
+.leaderboard-status {
+  min-height: 1.4em;
+  font-size: 1rem !important;
+  opacity: 0.85;
+}
+
+/* The table sits on a wooden board, like the signs */
+.leaderboard-table {
+  width: min(720px, 100%);
+  border-collapse: collapse;
+  border: 3px solid #6D4C2F;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #C8955C;
+  color: #3B2412;
+  box-shadow: 0 4px 0 #4A2A12;
+  font-size: 1.05rem;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.leaderboard-table th {
+  background: #8A5530;
+  color: #FFF3D6;
+  font-family: "Lilita One", "Trebuchet MS", sans-serif;
+  font-weight: normal;
+  letter-spacing: 0.03em;
+}
+
+.leaderboard-table tr:nth-child(odd) td {
+  background: rgba(255, 243, 214, 0.25);
+}
+
+.leaderboard-table td:first-child,
+.leaderboard-table th:first-child {
+  width: 2.5em;
+  text-align: center;
+  font-weight: bold;
+}
+
+.leaderboard-table td:nth-child(2) {
+  overflow-wrap: anywhere;
+}
+
+/* The player's own rows */
+.leaderboard-table tr.me td {
+  background: #F2C14E;
+  font-weight: bold;
+}
+
+.leaderboard .buttons {
+  margin: 20px 0 8px;
+}

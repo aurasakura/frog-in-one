@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/tode.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Froggy Golf</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet" />
+  </head>
+  <body data-state="title">
+   <canvas class="game"></canvas>
+
+   <!-- In-game HUD -->
+   <div class="hud">
+     <div class="hud-level"></div>
+     <div class="hud-strokes"></div>
+     <div class="hud-time"></div>
+   </div>
+   <button class="powerup-panel empty" aria-label="Use powerup (E)">
+     <span class="powerup-slot"><kbd class="powerup-key">E</kbd></span>
+     <span class="powerup-name">No powerup</span>
+   </button>
+   <div class="corner-buttons">
+     <button class="mute-button round-button" aria-label="Mute sound">
+       <svg class="icon-sound" viewBox="0 0 24 24" aria-hidden="true">
+         <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+         <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" />
+       </svg>
+       <svg class="icon-muted" viewBox="0 0 24 24" aria-hidden="true">
+         <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+         <path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+       </svg>
+     </button>
+     <button class="pause-button round-button" aria-label="Pause">II</button>
+   </div>
+   <div class="message"></div>
+
+   <!-- First-touch tip (tips.js) and the level 1 controls walkthrough (tutorial.js) -->
+   <div class="tip-card" hidden>
+     <p class="tip-title"></p>
+     <p class="tip-text"></p>
+   </div>
+   <div class="tutorial" hidden>
+     <span class="tutorial-step"></span>
+     <span class="tutorial-text"></span>
+     <button class="tutorial-skip">Skip</button>
+   </div>
+
+   <div class="level-banner" hidden>
+     <h2 class="banner-title"></h2>
+     <p class="banner-info"></p>
+   </div>
+
+   <!-- Title screen: the menu on the left, Froggy on his lily pad on the right (TitleScene.js) -->
+   <div class="title-screen">
+     <div class="title-menu">
+       <h1 class="game-title">Froggy Golf</h1>
+       <p class="tagline">Hop Froggy home, one stroke at a time</p>
+       <form class="name-form">
+         <label class="name-label" for="player-name">Your name</label>
+         <input id="player-name" class="name-input" type="text" maxlength="16" placeholder="Type your name" autocomplete="off" spellcheck="false" />
+         <div class="buttons stacked">
+           <button type="submit" class="play wood">Start</button>
+           <button type="button" class="open-how-to-play wood">Tutorial</button>
+           <button type="button" class="open-level-select wood">Level Select</button>
+           <button type="button" class="open-leaderboard wood">Leaderboard</button>
+         </div>
+         <p class="name-hint">Enter your name to start</p>
+       </form>
+     </div>
+   </div>
+
+   <!-- Tutorial: how to play and what every item does (menus.js fills the cards) -->
+   <div class="how-to-play overlay" hidden>
+     <h1>How to Play</h1>
+     <div class="how-to-sections"></div>
+     <div class="buttons">
+       <button class="close-how-to-play wood">Back</button>
+     </div>
+   </div>
+
+   <!-- Level select -->
+   <div class="level-select overlay" hidden>
+     <h1>Level Select</h1>
+     <div class="level-list"></div>
+     <p class="level-total"></p>
+     <div class="buttons">
+       <button class="back secondary">Back</button>
+     </div>
+   </div>
+
+   <!-- Stars screen: title above Froggy's victory close-up, results below -->
+   <div class="level-complete overlay" hidden>
+     <h1>Level complete!</h1>
+     <div class="complete-details">
+       <div class="stars">
+         <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+       </div>
+       <ul class="star-reasons"><li></li><li></li><li></li></ul>
+       <div class="buttons">
+         <button class="retry">Retry</button>
+         <button class="next">Next Level</button>
+       </div>
+     </div>
+   </div>
+
+   <div class="pause overlay" hidden>
+     <h1>Paused</h1>
+     <div class="buttons stacked">
+       <button class="resume">Resume</button>
+       <button class="restart secondary">Restart</button>
+       <button class="open-level-select secondary">Level Select</button>
+     </div>
+   </div>
+
+   <!-- Cutscenes: text box and skip hint; clicking anywhere skips -->
+   <div class="cutscene" hidden>
+     <p class="cutscene-text"></p>
+     <p class="cutscene-skip">Click or press Space to skip</p>
+   </div>
+
+   <div class="outro overlay" hidden>
+     <h1>Froggy made it home!</h1>
+     <p class="outro-total"></p>
+     <div class="outro-buttons">
+       <button class="play-again wood">Play Again</button>
+       <button class="open-level-select wood">Level Select</button>
+       <button class="open-leaderboard wood">Leaderboard</button>
+     </div>
+   </div>
+
+   <!-- Leaderboard (leaderboard.js): opened from the title screen or the outro -->
+   <div class="leaderboard overlay" hidden>
+     <h1>Leaderboard</h1>
+     <div class="leaderboard-tabs"></div>
+     <p class="leaderboard-status"></p>
+     <table class="leaderboard-table" hidden></table>
+     <div class="buttons">
+       <button class="close-leaderboard wood">Back</button>
+     </div>
+   </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
