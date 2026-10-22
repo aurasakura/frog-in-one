@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:itch": "vite build --mode itch --outDir dist-itch --emptyOutDir",
-    "zip:itch": "npm run build:itch && powershell -NoProfile -Command \"Compress-Archive -Path dist-itch/* -DestinationPath frog-in-one-itch.zip -Force\"",
+    "zip:itch": "npm run build:itch && powershell -NoProfile -ExecutionPolicy Bypass -File zip-itch.ps1",
     "preview": "vite preview"
   },
   "devDependencies": {
