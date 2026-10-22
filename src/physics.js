@@ -17,11 +17,12 @@ import { showTip, showTipAlways } from "./tips.js";
 import {
     playSplash,
     playSplat,
-    playBoing,
+    playSlimeBoing,
+    playSlimeBump,
     playGulp,
     playLaunch,
     playLand,
-    playThump,
+    playThud,
     playPowerup,
     playCroak,
 } from "./sound.js";
@@ -519,7 +520,7 @@ function applyObstacles(delta) {
     hop.completeOnStop = false;
     startDeform(STRETCH_AMOUNT, STRETCH_TIME);
     shakeCamera(OBSTACLE_SHAKE);
-    playThump();
+    playThud();
     if (game.state !== "flying") {
         cancelAim();
         aimGuide.hide();
@@ -557,6 +558,7 @@ function updateAiming(delta) {
 
 function bounceBack(factor) {
     shakeCamera(BUMP_SHAKE);
+    playThud(0.5);
     player.position.x = previous.x;
     player.position.y = previous.y;
     hop.velocity.x *= -factor;
@@ -574,7 +576,7 @@ function land(surface) {
         hop.velocity.z = Math.max(-hop.velocity.z * SLIME_BOUNCE_KEEP, SLIME_MIN_BOUNCE_SPEED);
         hop.lastSlimePad = surface.slimePad;
         surface.poke?.();
-        playBoing();
+        playSlimeBoing();
         startDeform(SQUASH_AMOUNT, SQUASH_TIME);
         showMessage("Boing! Free bounce");
         showTip("slime");
@@ -673,7 +675,7 @@ function updateFlight(delta) {
         // Hit the side of a slime block: boing back
         bounceBack(SLIME_SIDE_BOUNCE);
         surface.poke?.();
-        playBoing();
+        playSlimeBump();
     } else {
         bounceBack(SIDE_BOUNCE); // hit the side of a higher terrace
     }
@@ -725,7 +727,7 @@ function updateSlide(delta) {
             hop.velocity.x *= -SLIME_SIDE_BOUNCE;
             hop.velocity.y *= -SLIME_SIDE_BOUNCE;
             next.poke?.();
-            playBoing();
+            playSlimeBump();
         } else {
             rest();
         }

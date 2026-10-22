@@ -3,6 +3,7 @@ import { getBestStars, isUnlocked, totalStars, getPlayerName, setPlayerName } fr
 import { TIPS } from "./tips.js";
 import { signIconCanvas } from "./components/Props.js";
 import { showLeaderboard } from "./leaderboard.js";
+import { playButtonClick, playButtonHover } from "./sound.js";
 
 // Title screen, the tutorial (How to Play) and level select (§11). This
 // module only draws the screens and reports button presses; gameState.js
@@ -22,6 +23,17 @@ const handlers = {};
 export function initMenus({ onPlay, onLevelSelect, onPickLevel, onBack }) {
     Object.assign(handlers, { onPlay, onLevelSelect, onPickLevel, onBack });
 }
+
+// Every button in the game clicks when pressed and ticks softly when the
+// pointer moves onto it (mouse only; disabled buttons stay silent)
+document.addEventListener("click", (event) => {
+    if (event.target.closest("button:not(:disabled)")) playButtonClick();
+});
+document.addEventListener("pointerover", (event) => {
+    if (event.pointerType !== "mouse") return;
+    const button = event.target.closest("button:not(:disabled)");
+    if (button && !button.contains(event.relatedTarget)) playButtonHover();
+});
 
 // The player's name: remembered, and needed before Start
 nameInput.value = getPlayerName();

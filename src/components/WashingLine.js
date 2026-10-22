@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { playWhoosh } from "../sound.js";
+import { playLaundryWoosh, nearness } from "../sound.js";
 
 const POLE_HEIGHT = 66;
 const LINE_HEIGHT = 60;
@@ -14,7 +14,7 @@ const HIT_DEPTH = 8; // thickness of the hanging clothes' danger zone
 const KNOCK_SPEED = 230; // speed Froggy is knocked in the clothes' swing direction
 const KNOCK_UP = 150;
 const HIT_COOLDOWN = 0.6;
-const WHOOSH_DISTANCE = 400; // only whoosh when Froggy is this close
+const WHOOSH_DISTANCE = 450; // the woosh fades out with distance, silent past this
 
 const FABRIC_COLORS = [
     "#E74C3C", "#F1C40F", "#3498DB", "#FFFFFF", "#9B59B6",
@@ -251,7 +251,7 @@ export function WashingLine({ x, y, z, toX, toY, offset = 0 }) {
             const lifted = isLifted();
             if (lifted && !wasLifted && frog) {
                 const distance = Math.hypot(frog.position.x - (x + toX) / 2, frog.position.y - (y + toY) / 2);
-                if (distance < WHOOSH_DISTANCE) playWhoosh();
+                playLaundryWoosh(nearness(distance, WHOOSH_DISTANCE));
             }
             wasLifted = lifted;
         },

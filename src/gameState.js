@@ -18,6 +18,7 @@ import { recordStars, totalStars, firstUnfinishedLevel, getPlayerName } from "./
 import { initMenus, showTitle, showLevelSelect } from "./menus.js";
 import { startIntro, startOutro, skipCutscene, stopCutscene } from "./cutscenes.js";
 import { playLevelComplete } from "./sound.js";
+import { playMusic } from "./music.js";
 import { startTutorial } from "./tutorial.js";
 import { recordFinish, showLeaderboard } from "./leaderboard.js";
 
@@ -118,6 +119,15 @@ function onExit(state, next) {
 }
 
 function onEnter(state, previous) {
+    // Music: the game track through all the playing (it carries on from
+    // level to level, and through pausing); the story intro and the ending
+    // have their own; the stars screen's starts when it shows (see
+    // updateGameState); the title screen has its own too
+    if (state === "title") playMusic("title");
+    if (state === "intro") playMusic("intro");
+    if (state === "outro") playMusic("ending");
+    if (state === "levelIntro" || PLAYING.includes(state)) playMusic("game");
+
     if (state === "title") showTitle(true);
     if (state === "levelSelect") {
         game.levelSelectFrom = previous;
@@ -151,6 +161,16 @@ export function initGameState(activeScene, activeCamera) {
     prepareLevel(0);
     document.body.dataset.state = game.state;
     showTitle(true);
+
+    // Audio is only allowed after the first click or key press: start the
+    // title music then, if the title screen is still up
+    const startTitleMusic = () => {
+        if (game.state === "title") playMusic("title");
+        window.removeEventListener("pointerdown", startTitleMusic);
+        window.removeEventListener("keydown", startTitleMusic);
+    };
+    window.addEventListener("pointerdown", startTitleMusic);
+    window.addEventListener("keydown", startTitleMusic);
 }
 
 // Build (or rebuild) a level with Froggy at its start. Rebuilding also
@@ -304,6 +324,7 @@ export function updateGameState(delta) {
 
     if (game.state === "levelComplete" && completeScreen.hidden && game.stateTime > game.starsDelay) {
         completeScreen.hidden = false;
+        playMusic("score");
     }
 
     // Space skips cutscenes

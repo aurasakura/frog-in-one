@@ -1,7 +1,8 @@
 // Small sound effects, all synthesized here with Web Audio (original, no
 // audio files). Browsers only allow audio after a user gesture; sounds
 // triggered by a drag-and-release qualify. Any audio failure is ignored so
-// the game runs on.
+// the game runs on. Every sound is pitched slightly differently each time
+// (see vary), so repeats never sound identical.
 import { isMuted, setMuted } from "./progress.js";
 
 let context = null;
@@ -12,10 +13,18 @@ export function getMuted() {
     return muted;
 }
 
-// Mute or unmute all sounds (remembered between visits)
+const muteListeners = [];
+
+// Call `listener(muted)` whenever mute is toggled (music.js)
+export function onMuteChange(listener) {
+    muteListeners.push(listener);
+}
+
+// Mute or unmute all sounds and music (remembered between visits)
 export function toggleMuted() {
     muted = !muted;
     setMuted(muted);
+    for (const listener of muteListeners) listener(muted);
     return muted;
 }
 
@@ -23,6 +32,17 @@ function audioContext() {
     if (!context) context = new AudioContext();
     if (context.state === "suspended") context.resume();
     return context;
+}
+
+// The shared audio context for music.js, or null until the player has
+// clicked or pressed a key (browsers block audio before that)
+export function getAudioContext() {
+    if (!context && navigator.userActivation && !navigator.userActivation.hasBeenActive) return null;
+    try {
+        return audioContext();
+    } catch {
+        return null;
+    }
 }
 
 function play(build) {
@@ -48,16 +68,26 @@ function noise(ctx) {
     return source;
 }
 
+// A random pitch factor within ±`amount`, so each play sounds a bit different
+const vary = (amount = 0.07) => 1 + (Math.random() * 2 - 1) * amount;
+
+// How loud an obstacle's sound is at `distance` from Froggy: full up close,
+// fading to nothing at `range`
+export function nearness(distance, range) {
+    return Math.max(0, 1 - distance / range) ** 1.5;
+}
+
 // Filtered noise sweeping from one frequency to another while fading out
 function noiseSweep({ duration, from, to, volume, filterType = "lowpass" }) {
     play((ctx) => {
         const now = ctx.currentTime;
         const source = noise(ctx);
+        const pitch = vary();
 
         const filter = ctx.createBiquadFilter();
         filter.type = filterType;
-        filter.frequency.setValueAtTime(from, now);
-        filter.frequency.exponentialRampToValueAtTime(to, now + duration);
+        filter.frequency.setValueAtTime(from * pitch, now);
+        filter.frequency.exponentialRampToValueAtTime(to * pitch, now + duration);
 
         const gain = ctx.createGain();
         gain.gain.setValueAtTime(volume, now);
@@ -74,10 +104,11 @@ function noiseSweep({ duration, from, to, volume, filterType = "lowpass" }) {
 function toneSweep({ duration, from, to, volume, wave = "sine", delay = 0 }) {
     play((ctx) => {
         const start = ctx.currentTime + delay;
+        const pitch = vary(0.04); // tones vary less, so tunes stay in tune
         const osc = ctx.createOscillator();
         osc.type = wave;
-        osc.frequency.setValueAtTime(from, start);
-        osc.frequency.exponentialRampToValueAtTime(to, start + duration);
+        osc.frequency.setValueAtTime(from * pitch, start);
+        osc.frequency.exponentialRampToValueAtTime(to * pitch, start + duration);
 
         const gain = ctx.createGain();
         gain.gain.setValueAtTime(0.0001, ctx.currentTime);
@@ -100,28 +131,143 @@ export function playLand() {
     noiseSweep({ duration: 0.1, from: 800, to: 200, volume: 0.15 });
 }
 
+// Falling into water: just a splash, a burst of water noise with a bright
+// spray on top
 export function playSplash() {
-    noiseSweep({ duration: 0.5, from: 2500, to: 300, volume: 0.5 });
+    noiseShape({ filterType: "lowpass", frequency: [[0, 3000], [0.55, 350]], gain: [[0.02, 0.6], [0.55, 0.001]] });
+    noiseShape({ filterType: "highpass", frequency: [[0, 2500], [0.3, 4000]], gain: [[0.02, 0.18], [0.3, 0.001]] });
 }
 
 export function playSplat() {
     noiseSweep({ duration: 0.25, from: 900, to: 120, volume: 0.6 });
 }
 
-export function playWhoosh() {
-    noiseSweep({ duration: 0.35, from: 400, to: 2200, volume: 0.25, filterType: "bandpass" });
+// Noise shaped over time: the filter frequency and the volume each follow a
+// list of [seconds, value] points (volume points are scaled by `volume`)
+function noiseShape({ filterType = "bandpass", q = 1, frequency, gain, volume = 1, delay = 0 }) {
+    if (volume <= 0.001) return;
+    play((ctx) => {
+        const start = ctx.currentTime + delay;
+        const pitch = vary();
+        const end = gain[gain.length - 1][0];
+        const source = noise(ctx);
+        const filter = ctx.createBiquadFilter();
+        filter.type = filterType;
+        filter.Q.value = q;
+        filter.frequency.setValueAtTime(frequency[0][1] * pitch, start);
+        for (const [t, f] of frequency.slice(1)) filter.frequency.exponentialRampToValueAtTime(f * pitch, start + t);
+        const amp = ctx.createGain();
+        amp.gain.setValueAtTime(0.0001, start);
+        for (const [t, g] of gain) amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, g * volume), start + t);
+        source.connect(filter).connect(amp).connect(ctx.destination);
+        source.loop = true; // so a late start in the buffer never runs out
+        source.start(start, Math.random() * 0.5); // a different stretch of noise each time
+        source.stop(start + end);
+    });
+}
+
+// A tone whose pitch wobbles (a springy "boing"): it glides from `from` to
+// `to` with a vibrato of `wobble` Hz at `rate` per second, while fading
+function wobbleTone({ duration, from, to, wobble, rate, volume, wave = "sine" }) {
+    play((ctx) => {
+        const now = ctx.currentTime;
+        const pitch = vary();
+        const osc = ctx.createOscillator();
+        osc.type = wave;
+        osc.frequency.setValueAtTime(from * pitch, now);
+        osc.frequency.exponentialRampToValueAtTime(to * pitch, now + duration * 0.35);
+        osc.frequency.exponentialRampToValueAtTime(to * pitch * 0.8, now + duration);
+        const lfo = ctx.createOscillator();
+        lfo.frequency.setValueAtTime(rate, now);
+        lfo.frequency.linearRampToValueAtTime(rate * 0.6, now + duration); // the spring slows down
+        const depth = ctx.createGain();
+        depth.gain.setValueAtTime(wobble, now);
+        depth.gain.exponentialRampToValueAtTime(1, now + duration);
+        lfo.connect(depth).connect(osc.frequency);
+        const amp = ctx.createGain();
+        amp.gain.setValueAtTime(volume, now);
+        amp.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(amp).connect(ctx.destination);
+        osc.start(now);
+        lfo.start(now);
+        osc.stop(now + duration);
+        lfo.stop(now + duration);
+    });
+}
+
+// Washing line swinging past: a soft cloth "whoo-sh" that swells and fades
+export function playLaundryWoosh(volume = 1) {
+    noiseShape({
+        q: 0.8,
+        frequency: [[0, 260], [0.3, 1100], [0.65, 420]],
+        gain: [[0.22, 0.32], [0.65, 0.001]],
+        volume,
+    });
+}
+
+// Hose about to fire: a little drip
+export function playHoseDrip(volume = 1) {
+    if (volume <= 0.001) return;
+    toneSweep({ duration: 0.08, from: 1400, to: 500, volume: 0.12 * volume });
+}
+
+// Hose jet firing: a hissing "swoosh" that rushes up and trails off
+export function playHoseSwoosh(volume = 1) {
+    noiseShape({
+        filterType: "highpass",
+        q: 0.7,
+        frequency: [[0, 900], [0.15, 3200], [0.9, 2000]],
+        gain: [[0.06, 0.28], [0.35, 0.18], [0.9, 0.001]],
+        volume,
+    });
+}
+
+// Sprinkler turning: a quiet "tch" each tick
+export function playSprinklerTick(volume = 1) {
+    noiseShape({ filterType: "highpass", frequency: [[0, 3500], [0.035, 5000]], gain: [[0.004, 0.16], [0.035, 0.001]], volume });
+}
+
+// Caught in the sprinkler's spray: a light spritz
+export function playSprinklerSpritz() {
+    noiseShape({
+        filterType: "bandpass",
+        q: 0.6,
+        frequency: [[0, 5000], [0.35, 2500]],
+        gain: [[0.03, 0.22], [0.35, 0.001]],
+    });
 }
 
 export function playGulp() {
     toneSweep({ duration: 0.15, from: 320, to: 90, volume: 0.4 });
 }
 
-export function playBoing() {
-    toneSweep({ duration: 0.3, from: 160, to: 520, volume: 0.3, wave: "triangle" });
+// Bouncing off a slime top: a springy, wobbling boing with a squelch
+export function playSlimeBoing() {
+    wobbleTone({ duration: 0.55, from: 150, to: 560, wobble: 60, rate: 16, volume: 0.32 });
+    noiseShape({ filterType: "lowpass", frequency: [[0, 700], [0.08, 200]], gain: [[0.01, 0.3], [0.08, 0.001]] });
 }
 
-export function playThump() {
-    toneSweep({ duration: 0.15, from: 180, to: 70, volume: 0.35, wave: "square" });
+// Bumping into the side of slime: a lower, shorter, squishier boing
+export function playSlimeBump() {
+    wobbleTone({ duration: 0.3, from: 110, to: 260, wobble: 35, rate: 22, volume: 0.3, wave: "triangle" });
+}
+
+// Hit by something (a hose jet, the laundry) or bumping into a wall: a
+// solid, low thud. `volume` softens it for the smaller bumps.
+export function playThud(volume = 1) {
+    toneSweep({ duration: 0.2, from: 130, to: 45, volume: 0.5 * volume });
+    noiseShape({ filterType: "lowpass", frequency: [[0, 500], [0.12, 120]], gain: [[0.005, 0.45], [0.12, 0.001]], volume });
+}
+
+// Clicking a (wooden) button: a short, hollow wood-block "tok"
+export function playButtonClick() {
+    toneSweep({ duration: 0.07, from: 720, to: 480, volume: 0.22, wave: "triangle" });
+    noiseShape({ filterType: "bandpass", q: 4, frequency: [[0, 1800], [0.05, 900]], gain: [[0.003, 0.3], [0.05, 0.001]] });
+}
+
+// Pointer moving onto a button: a very soft tick
+export function playButtonHover() {
+    toneSweep({ duration: 0.04, from: 1300, to: 1100, volume: 0.05 });
 }
 
 // Rising sparkly chime

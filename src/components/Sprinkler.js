@@ -1,10 +1,14 @@
 import * as THREE from "three";
+import { playSprinklerTick, playSprinklerSpritz, nearness } from "../sound.js";
 
 const SPIN_SPEED = 1.2; // radians per second
 const SPRAY_WIDTH = THREE.MathUtils.degToRad(50); // angle of the spray sector
 const SPRAY_RADIUS = 170; // how far the wind reaches
 const SPRAY_TOP = 140; // ...and how high above the sprinkler
 const WIND_ACCEL = 520; // push on Froggy while he's in the spray (units/s²)
+const TICK_INTERVAL = 0.22; // seconds between the "tch" ticks as it turns
+const TICK_RANGE = 380; // ticks are heard from this far away
+const SPRITZ_COOLDOWN = 0.6; // seconds between spritzes while he's in the spray
 
 const NOZZLE_HEIGHT = 14;
 const DROPLET_COUNT = 70;
@@ -64,13 +68,21 @@ export function Sprinkler({ x, y, z, startAngle = 0 }) {
     }));
 
     let sprayAngle = startAngle;
+    let tickTimer = Math.random() * TICK_INTERVAL; // so sprinklers don't tick in step
+    let spritzCooldown = 0;
     const matrix = new THREE.Matrix4();
 
     return {
         object: group,
 
-        update(delta) {
+        update(delta, frog) {
             sprayAngle = wrapAngle(sprayAngle + SPIN_SPEED * delta);
+            spritzCooldown = Math.max(0, spritzCooldown - delta);
+            tickTimer -= delta;
+            if (tickTimer <= 0) {
+                tickTimer += TICK_INTERVAL;
+                if (frog) playSprinklerTick(nearness(Math.hypot(frog.position.x - x, frog.position.y - y), TICK_RANGE));
+            }
             head.rotation.z = sprayAngle;
 
             const groundSpeed = DROPLET_SPEED * Math.cos(DROPLET_ANGLE);
@@ -104,6 +116,10 @@ export function Sprinkler({ x, y, z, startAngle = 0 }) {
 
             frog.velocity.x += (dx / distance) * WIND_ACCEL * delta;
             frog.velocity.y += (dy / distance) * WIND_ACCEL * delta;
+            if (spritzCooldown <= 0) {
+                spritzCooldown = SPRITZ_COOLDOWN;
+                playSprinklerSpritz();
+            }
             return "pushed";
         },
     };

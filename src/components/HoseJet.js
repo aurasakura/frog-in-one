@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { playHoseDrip, playHoseSwoosh, nearness } from "../sound.js";
 
 // Timing of one cycle: off → warning (drips) → on (stream) → off …
 const OFF_TIME = 2.2; // seconds
@@ -12,6 +13,7 @@ const STREAM_SPEED = 500; // how fast the stream's front shoots out
 const KNOCK_SPEED = 260; // sideways speed given to Froggy, along the stream
 const KNOCK_UP = 170; // ...and upward speed
 const HIT_COOLDOWN = 0.6; // seconds before the same jet can hit again
+const SOUND_RANGE = 500; // heard from this far away
 
 const STREAM_DROPLETS = 40;
 const DRIP_COUNT = 4;
@@ -62,6 +64,7 @@ export function HoseJet({ x, y, z, direction = [1, 0], length = 200, offset = 0 
     let time = offset;
     let cooldown = 0;
     let reach = 0; // how far the stream currently extends
+    let lastPhase = null;
 
     function phase() {
         const t = ((time % CYCLE_TIME) + CYCLE_TIME) % CYCLE_TIME;
@@ -73,10 +76,18 @@ export function HoseJet({ x, y, z, direction = [1, 0], length = 200, offset = 0 
     return {
         object: group,
 
-        update(delta) {
+        update(delta, frog) {
             time += delta;
             cooldown = Math.max(0, cooldown - delta);
             const { name, t } = phase();
+
+            // A drip as it warns, a swoosh as it fires (quieter further away)
+            if (name !== lastPhase && lastPhase !== null && frog) {
+                const loudness = nearness(Math.hypot(frog.position.x - x, frog.position.y - y), SOUND_RANGE);
+                if (name === "warning") playHoseDrip(loudness);
+                if (name === "on") playHoseSwoosh(loudness);
+            }
+            lastPhase = name;
 
             reach = name === "on" ? Math.min(length, STREAM_SPEED * t) : 0;
             stream.visible = reach > 0;

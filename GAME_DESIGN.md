@@ -198,7 +198,9 @@ The arcade prototype (enemies, attack, score-based difficulty, Game Over) has be
 - **Blinking:** every frog (in play, on the title screen and in the outro) blinks every 2–5 s, sometimes twice in a row (`updateFrogBlink` in `components/FrogModel.js`).
 - **Celebration** (hole in one or under par): confetti and a "Frog in one!" / "Under par!" message on top of the victory.
 - **Screen shake:** gentle shake when an obstacle knocks Froggy, smaller when he bumps a wall or prop (`shakeCamera` in `Camera.js`).
-- **Sounds:** launch, landing, splash, mud splat, gulp, slime boing, obstacle thump, washing-line whoosh, powerup use, level complete fanfare, and chirps in the outro. All are synthesized in `sound.js` (original, no audio files) and respect the mute setting.
+- **Sounds:** launch, landing, a splash (just water noise) on falling into water, mud splat, gulp, a springy wobbling boing on slime tops and a lower squishy one off their sides, a solid thud when anything hits Froggy (and a softer one bumping a wall), the laundry's cloth "whoo-sh" as it swings past, the hose's drip as it warns and hissing swoosh as it fires, the sprinkler's quiet ticking and a spritz when its spray catches him, powerup use, level complete fanfare, and chirps in the outro. Obstacle sounds get quieter with distance, and every sound is pitched slightly differently each time. All are synthesized in `sound.js` (original, no audio files) and respect the mute setting.
+- **Music** (`music.js`, also synthesized): a bouncy looping track through all the playing (carrying on across levels and pauses), a calm celebratory loop on the stars screen, a gentle wistful one during the story intro, and a sweet waltz for the ending with Froggy's wife. The start screen has its own relaxed "lazy pond" tune (from the first click or key press, which is when browsers first allow audio). Tracks crossfade; mute silences music too.
+- **Buttons:** every button gives a wooden "tok" when clicked and a very soft tick when the mouse moves onto it.
 
 ### How the pieces fit
 
