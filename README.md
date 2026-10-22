@@ -4,6 +4,10 @@ A 3D mini-golf platformer in the browser. Drag back from Froggy and let go to ho
 
 **Play it:** <https://frog-in-one.netlify.app>
 
+[![Frog-in-One trailer](trailer/thumbnail-1280x720.png)](trailer/frog-in-one-trailer.mp4)
+
+Watch the [26-second trailer](trailer/frog-in-one-trailer.mp4). The `trailer/` folder also has the thumbnail and a 630×500 cover image for itch.io.
+
 Made with [three.js](https://threejs.org) and [Vite](https://vite.dev). All 3D shapes except the houses, every texture, the sound effects and the music are generated in code.
 
 ## Attribution
