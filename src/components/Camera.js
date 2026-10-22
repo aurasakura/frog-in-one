@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { screenWidth, screenHeight } from "../screenSize.js";
 
 const FOV = 55; // degrees
 const FOLLOW_DISTANCE = 150; // behind Froggy, along the aim direction
@@ -34,7 +35,7 @@ const INTRO_START_LOOK_HEIGHT = 24; // above his head, so he sits below the cent
 export function Camera() {
     const camera = new THREE.PerspectiveCamera(
         FOV,
-        window.innerWidth / window.innerHeight,
+        screenWidth() / screenHeight(),
         1, // near plane
         9000 // far plane
     );
@@ -55,7 +56,7 @@ export function Camera() {
     };
 
     window.addEventListener("resize", () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = screenWidth() / screenHeight();
         camera.updateProjectionMatrix();
     });
 

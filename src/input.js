@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { getViewHeading } from "./components/Camera.js";
 import { getSensitivity } from "./progress.js";
+import { screenWidth, screenHeight } from "./screenSize.js";
 
 const MAX_DRAG_PX = 220; // drag length for full power (less on small screens)
 const MAX_DRAG_SCREEN_SHARE = 0.35; // ...at most this share of the shorter screen side
@@ -56,7 +57,7 @@ export const pointer = { x: 0 };
 for (const type of ["pointerdown", "pointermove"]) {
     window.addEventListener(type, (event) => {
         if (event.target.closest?.(".powerup-panel")) return;
-        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+        pointer.x = (event.clientX / screenWidth()) * 2 - 1;
     });
 }
 for (const type of ["pointerup", "pointercancel"]) {
@@ -96,7 +97,7 @@ const projected = new THREE.Vector3();
 
 // Higher sensitivity reaches full power with a shorter drag
 function maxDragPx() {
-    const shorterSide = Math.min(window.innerWidth, window.innerHeight);
+    const shorterSide = Math.min(screenWidth(), screenHeight());
     return Math.min(MAX_DRAG_PX, shorterSide * MAX_DRAG_SCREEN_SHARE) / getSensitivity();
 }
 

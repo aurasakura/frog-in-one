@@ -7,7 +7,16 @@ body {
   -webkit-touch-callout: none; /* no long-press menu while holding a button */
 }
 
+html,
+body {
+  height: 100%;
+}
+
 canvas.game {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: block;
   touch-action: none; /* let pointer drags aim instead of scrolling/zooming */
 }
@@ -330,6 +339,7 @@ body:not(:is([data-state="aiming"], [data-state="flying"], [data-state="sliding"
   color: white;
   font-weight: bold;
   user-select: none;
+  pointer-events: none; /* presses go through to Froggy underneath... */
 }
 
 .tutorial.next {
@@ -358,6 +368,36 @@ body:not(:is([data-state="aiming"], [data-state="flying"], [data-state="sliding"
   color: white;
   font-weight: bold;
   cursor: pointer;
+  pointer-events: auto; /* ...except on Skip */
+}
+
+/* Phones (either way round): a compact top bar tucked left of the corner
+   buttons, smaller messages, and the walkthrough low down, clear of Froggy
+   (the power bar moves down below it, further on) */
+@media (max-width: 600px), (max-height: 500px) {
+  .hud {
+    top: max(16px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    transform: none;
+    max-width: calc(100vw - 140px);
+    gap: 2px 12px;
+    padding: 6px 10px;
+    justify-content: flex-start;
+    font-size: 0.9rem;
+  }
+
+  .message {
+    font-size: 1.6rem;
+  }
+
+  .tutorial {
+    bottom: calc(max(14px, env(safe-area-inset-bottom)) + 26px); /* just above the power bar */
+    width: max-content;
+    gap: 8px;
+    padding: 6px 8px 6px 10px;
+    border-radius: 18px;
+    font-size: 0.9rem;
+  }
 }
 
 /* Level intro: no top bar, powerup panel or pause button (which can't be
@@ -550,6 +590,13 @@ body[data-state="levelComplete"] :is(.hud, .powerup-panel) {
 .power-bar-fill {
   height: 100%;
   width: 0;
+}
+
+/* Phones: right at the bottom, under the walkthrough */
+@media (max-width: 600px), (max-height: 500px) {
+  .power-bar {
+    bottom: max(14px, env(safe-area-inset-bottom));
+  }
 }
 
 /* --- Wooden buttons (title screen and tutorial) --- */

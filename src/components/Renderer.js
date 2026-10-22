@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { screenWidth, screenHeight } from "../screenSize.js";
 
 export function Renderer() {
     const canvas = document.querySelector("canvas.game");
@@ -10,13 +11,14 @@ export function Renderer() {
         canvas: canvas,
     });
 
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    window.addEventListener("resize", () => {
+    // The canvas fills the screen through CSS (style.css); this only sets
+    // how many pixels it draws
+    function fitScreen() {
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+        renderer.setSize(screenWidth(), screenHeight(), false);
+    }
+    fitScreen();
+    window.addEventListener("resize", fitScreen);
 
     return renderer;
 }

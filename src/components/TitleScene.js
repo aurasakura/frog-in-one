@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { FrogModel, FROGGY_COLORS, setFrogExpression, updateFrogBlink } from "./FrogModel.js";
 import { LilyPad, LILY_PAD_HEIGHT } from "./LilyPad.js";
 import { playLaunch, playLand } from "../sound.js";
+import { screenWidth, screenHeight } from "../screenSize.js";
 
 // The title screen's own little scene: Froggy on a lily pad in a pond,
 // bobbing on the water and every so often waving, grinning or doing a
@@ -193,7 +194,7 @@ export function TitleScene() {
     // Frame Froggy right of centre (or above it on a narrow screen) by
     // moving the camera and its target the other way
     function frame() {
-        const aspect = window.innerWidth / window.innerHeight;
+        const aspect = screenWidth() / screenHeight();
         camera.aspect = aspect;
         camera.updateProjectionMatrix();
         const narrow = aspect < NARROW_ASPECT;
@@ -217,7 +218,7 @@ export function TitleScene() {
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     function isOverFrog(x, y) {
-        pointer.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
+        pointer.set((x / screenWidth()) * 2 - 1, -(y / screenHeight()) * 2 + 1);
         raycaster.setFromCamera(pointer, camera);
         return raycaster.intersectObject(model, true).length > 0;
     }
