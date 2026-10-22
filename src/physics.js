@@ -98,6 +98,9 @@ const CROAK_SHORTEN = 0.07; // and how much shorter
 const CROUCH_SQUASH = 0.32; // height lost at full power
 const CROUCH_SPEED = 12; // how quickly he follows the pull
 const LEAN_BACK = 0.35; // radians at full power
+// How far his back legs reach behind his feet: leaning back tips them down,
+// so he's lifted by as much to keep them out of the ground
+const REAR_REACH = 7.5;
 const TREMBLE_FROM = 0.6; // power where trembling starts
 const TREMBLE_AMOUNT = 0.7; // world units at full power
 const TREMBLE_SPEED = 55; // radians per second
@@ -171,6 +174,7 @@ const previous = new THREE.Vector3();
 const frogCenter = new THREE.Vector3();
 const flyCenter = new THREE.Vector3();
 const launchVelocityTemp = new THREE.Vector3();
+const aimOrigin = new THREE.Vector3();
 
 export function isMidHop() {
     return game.state === "flying" || game.state === "sliding";
@@ -287,6 +291,7 @@ export function updateModel(delta) {
         leanAxis.set(hop.heading.y, -hop.heading.x, 0);
         if (pose.crouch > 0.001 && leanAxis.lengthSq() > 0) {
             player.quaternion.setFromAxisAngle(leanAxis.normalize(), LEAN_BACK * pose.crouch);
+            model.position.z += REAR_REACH * width * Math.sin(LEAN_BACK * pose.crouch); // keep his rear above ground
         } else {
             player.quaternion.identity();
         }
@@ -540,8 +545,12 @@ function updateAiming(delta) {
     hop.aimPower = aim ? aim.power : 0;
     if (aim) {
         hop.heading.copy(aim.direction);
+        // The arc starts from the middle of his body (lower as he crouches),
+        // so it comes straight out of him rather than from his feet
+        aimOrigin.copy(player.position);
+        aimOrigin.z += BODY_MIDDLE * (1 - CROUCH_SQUASH * pose.crouch);
         aimGuide.show(
-            player.position,
+            aimOrigin,
             launchVelocity(aim.direction, effectivePower(aim.power), launchVelocityTemp),
             GRAVITY,
             aim.power,

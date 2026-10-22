@@ -131,11 +131,26 @@ export function playLand() {
     noiseSweep({ duration: 0.1, from: 800, to: 200, volume: 0.15 });
 }
 
-// Falling into water: just a splash, a burst of water noise with a bright
-// spray on top
+// Falling into water: just a splash. A soft, unresonant wash of water noise
+// that swells in and falls away, with a scatter of tiny spray droplets
+// (very short bright noise bursts at random moments) on top.
 export function playSplash() {
-    noiseShape({ filterType: "lowpass", frequency: [[0, 3000], [0.55, 350]], gain: [[0.02, 0.6], [0.55, 0.001]] });
-    noiseShape({ filterType: "highpass", frequency: [[0, 2500], [0.3, 4000]], gain: [[0.02, 0.18], [0.3, 0.001]] });
+    noiseShape({
+        filterType: "bandpass",
+        q: 0.4,
+        frequency: [[0, 1800], [0.15, 1200], [0.7, 380]],
+        gain: [[0.035, 0.55], [0.18, 0.3], [0.7, 0.001]],
+    });
+    noiseShape({ filterType: "lowpass", q: 0.5, frequency: [[0, 900], [0.5, 200]], gain: [[0.04, 0.35], [0.5, 0.001]] });
+    for (let i = 0; i < 9; i++) {
+        noiseShape({
+            filterType: "highpass",
+            q: 0.5,
+            frequency: [[0, 2500 + Math.random() * 2500], [0.03, 2000]],
+            gain: [[0.004, 0.06 + Math.random() * 0.06], [0.02 + Math.random() * 0.03, 0.001]],
+            delay: 0.06 + Math.random() * 0.5,
+        });
+    }
 }
 
 export function playSplat() {

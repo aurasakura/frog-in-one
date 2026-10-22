@@ -315,6 +315,29 @@ export function playMusic(name) {
     current = { name, gain, timer: setInterval(schedule, TICK_MS) };
 }
 
+// Render `seconds` of a track offline (no speakers), e.g. for a recording
+// or trailer: resolves to a stereo AudioBuffer at full music volume
+export function renderTrack(name, seconds, sampleRate = 44100) {
+    const ctx = new OfflineAudioContext(2, Math.ceil(seconds * sampleRate), sampleRate);
+    const out = ctx.createGain();
+    out.gain.value = MUSIC_VOLUME;
+    out.connect(ctx.destination);
+    const track = TRACKS[name];
+    const stepTime = 60 / track.bpm / track.stepsPerBeat;
+    for (let step = 0, time = 0; time < seconds; step++, time += stepTime) {
+        for (const voice of track.parsed) {
+            for (const event of voice.events) {
+                if (event.step !== (step % track.loopSteps) % voice.steps) continue;
+                const play = INSTRUMENTS[voice.instrument];
+                const duration = event.length * stepTime;
+                if (event.notes.length === 0) play(ctx, out, 0, time, duration, voice.volume);
+                for (const hz of event.notes) play(ctx, out, hz, time, duration, voice.volume);
+            }
+        }
+    }
+    return ctx.startRendering();
+}
+
 export function stopMusic() {
     if (!current) return;
     const ctx = getAudioContext();
