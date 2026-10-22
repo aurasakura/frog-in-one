@@ -34,7 +34,7 @@ Froggy is a long way from home, and his wife is waiting by the garden pond with 
 <p align="center"><img src="docs/screenshots/ending.jpg" alt="Froggy and his wife on the lily pad, grinning, with hearts floating up" width="820"><br>
 <i>All to bring Froggy home.</i></p>
 
-**Also inside:** five levels, three stars per level, a shared online leaderboard, a How to Play guide, original music and sound effects, and a little ending you'll have to earn.
+**Also inside:** plays on phones, tablets and touchpads as well as with a mouse, five levels, three stars per level, a shared online leaderboard, a How to Play guide, original music and sound effects, and a little ending you'll have to earn.
 
 Made with [three.js](https://threejs.org) and [Vite](https://vite.dev). All 3D shapes except the houses, every texture, the sound effects and the music are generated in code.
 
@@ -73,13 +73,19 @@ netlify dev
 
 ### Controls
 
-| Action | Input |
-|---|---|
-| Aim and hop | Press on Froggy, drag back, let go (mouse or touch) |
-| Look around | Right-drag |
-| Use a powerup | E, or press the powerup panel |
-| Pause | Esc, or the pause button |
-| Skip a cutscene or level banner | Space or click |
+The game plays with a mouse and keyboard, a touchpad, or a touch screen (phones and tablets, upright or sideways).
+
+| Action | Mouse and keyboard | Touch screen or touchpad |
+|---|---|---|
+| Aim and hop | Press on Froggy, drag back, let go | Touch Froggy, drag back, let go |
+| Look around | Drag anywhere away from Froggy, or right-drag | Drag anywhere away from Froggy |
+| Use a powerup | E, or click the powerup panel | Tap the powerup panel (hold it to Glide) |
+| Steer a Glide | Move the mouse left or right | Touch left or right of the screen with another finger |
+| Pause | Esc, or the pause button | The pause button |
+| Skip a cutscene or level banner | Space or click | Tap |
+| Settings | The gear button, top right | The gear button, top right |
+
+**Settings** (the gear): sensitivity (how far you drag for a full-power hop and how fast the view turns; turn it up on a small screen or touchpad), music volume, and mute. They're remembered between visits. On touch screens the in-game hints, signs and tips say "tap" instead of naming keys.
 
 ## Third-party assets
 
