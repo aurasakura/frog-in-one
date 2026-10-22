@@ -1,12 +1,40 @@
-# Frog-in-One
+<h1 align="center">Frog-in-One</h1>
 
-A 3D mini-golf platformer in the browser. Drag back from Froggy and let go to hop him across floating lawns, mud, wet pavement and slime, past sprinklers, hose jets and swinging laundry, and onto the lily pad in as few hops as you can. Five levels take him from his front lawn all the way home to his wife.
+<p align="center"><b>Hop Froggy home, one hop at a time.</b><br>
+A cosy 3D mini-golf platformer you play right in your browser.</p>
 
-**Play it:** <https://frog-in-one.netlify.app>
+<p align="center">
+  <a href="https://frog-in-one.netlify.app"><b>▶ Play now</b></a> &nbsp;·&nbsp;
+  <a href="trailer/frog-in-one-trailer.mp4"><b>Watch the trailer</b></a>
+</p>
 
-[![Frog-in-One trailer](trailer/thumbnail-1280x720.png)](trailer/frog-in-one-trailer.mp4)
+<p align="center">
+  <a href="https://frog-in-one.netlify.app"><img src="trailer/thumbnail-1280x720.png" alt="Frog-in-One: Froggy on his lily pad under the game's title" width="820"></a>
+</p>
 
-Watch the [26-second trailer](trailer/frog-in-one-trailer.mp4). The `trailer/` folder also has the thumbnail and a 630×500 cover image for itch.io.
+Froggy is a long way from home, and his wife is waiting by the garden pond with dinner. Drag back from him, let go, and hop him across floating lawns and through five neighbourhood levels, landing on the lily pad by the red flag in as few hops as you can. Beat par and the clock for three stars, then see how you rank on the shared leaderboard.
+
+## What's inside
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/slime.jpg" alt="Froggy bouncing along a lane of green slime pads"><br><b>Different terrains.</b> Slime bounces you onward, mud stops you dead, wet pavement sends you sliding.</td>
+    <td width="50%"><img src="docs/screenshots/mud.jpg" alt="Froggy landing in a patch of mud"><br><b>Every surface plays differently.</b> Read the ground before you hop.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/super-leap.jpg" alt="Froggy high in the air on a Super Leap over the pond"><br><b>Different powerups.</b> Eat a fly for a Super Leap, a Glide or a Double Hop.</td>
+    <td><img src="docs/screenshots/sprinkler.jpg" alt="A sprinkler's spray blowing Froggy off course"><br><b>Different obstacles.</b> Sprinklers blow you off course in mid-air.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hose.jpg" alt="A hose jet blasting Froggy across wet pavement"><br><b>Hose jets</b> drip a warning, then knock you onto your butt.</td>
+    <td><img src="docs/screenshots/laundry.jpg" alt="Swinging laundry about to swat Froggy"><br><b>Swinging laundry</b> swats you away. Time your hop for the upswing.</td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/screenshots/ending.jpg" alt="Froggy and his wife on the lily pad, grinning, with hearts floating up" width="820"><br>
+<i>All to bring Froggy home.</i></p>
+
+**Also inside:** five levels, three stars per level, a shared online leaderboard, a How to Play guide, original music and sound effects, and a little ending you'll have to earn.
 
 Made with [three.js](https://threejs.org) and [Vite](https://vite.dev). All 3D shapes except the houses, every texture, the sound effects and the music are generated in code.
 
