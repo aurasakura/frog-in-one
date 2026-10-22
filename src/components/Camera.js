@@ -160,6 +160,15 @@ export function updateCamera(camera, target, aimDirection, locked, delta, aimPul
         camera.position.z += Math.sin(t * 0.83 + 4) * rumble * 0.5;
     }
     camera.lookAt(state.lookAt);
+    cameraOverride?.(camera);
+}
+
+// Optional replacement for the chase view, e.g. a fixed shot when recording
+// a trailer: called with the camera after updateCamera has placed it, so it
+// can move it anywhere. null (the default) leaves the chase camera alone.
+let cameraOverride = null;
+export function setCameraOverride(override) {
+    cameraOverride = override;
 }
 
 // Turn the view around Froggy (right-drag) by `radians`, without turning him

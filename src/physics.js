@@ -752,6 +752,9 @@ function updateSlide(delta) {
 
 // Runs while the game is in a playing state (aiming / flying / sliding)
 export function updatePhysics(delta) {
+    // A frame with no time passed would read a hop that's just been launched
+    // (still on the ground) as having landed already
+    if (delta <= 0) return;
     const step = Math.min(delta, MAX_STEP);
 
     if (powerupInput.requested) {
