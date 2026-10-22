@@ -124,6 +124,8 @@ Level 5 ends at Froggy's garden pond by his house. The lily pad floats in the po
 
 ### Props
 
+Around every level (`components/Scenery.js`, laid out from a seed of the level's name): water out to the horizon under a gradient sky (no fog, so the horizon stays a clear line), lily pads with a few pink flowers, clouds drifting overhead, and about 14 islands 550–2400 units out, of varying heights (6–70: low sandy ones, and taller ones with rocky cliffs over a beach), each with trees, houses or both. The islands are decoration only: they sit at the water, far below the terraces and out of reach, and touching one counts as a splash (`islandAt` in `levelBuilder.js`).
+
 Levels are dressed with neighbourhood props as **static obstacles** (`components/Props.js`, built from simple geometry): picket fences, mailboxes, bins, flower beds and birdbaths, plus houses (`small_house.glb`).
 - Every prop registers a collision shape in `Props.js`, using `collision.js`: a bounding-box footprint for houses, fences, mailboxes and flower beds, and a circle for bins and birdbaths.
 - Froggy bounces off a prop in the air, stops against it when sliding, and clears it by hopping higher than its top.

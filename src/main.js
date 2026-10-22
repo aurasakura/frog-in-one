@@ -16,7 +16,24 @@ import { isCutsceneRunning, updateCutscene } from './cutscenes.js';
 import { TitleScene } from './components/TitleScene.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#87CEEB'); // sky
+// Sky: deeper blue overhead fading lighter towards the horizon, where it
+// meets the (darker) water in a clear line. No fog, so they stay apart.
+const HORIZON = '#BFE4F7';
+scene.background = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 2;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+  gradient.addColorStop(0, '#4FA8E0');
+  gradient.addColorStop(0.6, '#93D0F0');
+  gradient.addColorStop(1, HORIZON);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 2, 256);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+})();
 scene.add(player);
 scene.add(aimGuide.object);
 for (const effect of [splash, mudSplat, dust, sparkles, confetti, frogShadow]) {

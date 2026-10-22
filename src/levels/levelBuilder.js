@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Terrace, CELL_SIZE } from "../components/Terrace.js";
 import { Water } from "../components/Water.js";
+import { Scenery } from "../components/Scenery.js";
 import { LilyPad, LILY_PAD_HEIGHT } from "../components/LilyPad.js";
 import { placeHouses, clearHouses } from "../components/House.js";
 import { PROPS, clearProps, FLOWER_BED_TOP } from "../components/Props.js";
@@ -18,6 +19,7 @@ const tileKey = (col, row) => `${col},${row}`;
 
 let levelGroup = null;
 let lilyPadObject = null;
+let scenery = null;
 let terraces = [];
 
 // The current level, as built
@@ -83,6 +85,8 @@ export function buildLevel(data, scene) {
         maxY: Math.max(all.maxY, box.maxY),
     }));
     levelGroup.add(Water(bounds));
+    scenery = Scenery(bounds, level.terraceFootprints, data.name); // islands, lily pads, clouds
+    levelGroup.add(scenery);
 
     const padTile = tileAt(data.lilyPad.col, data.lilyPad.row);
     const pad = LilyPad({ onWater: padTile.type === "water", padScale: data.lilyPad.size ?? 1 });
@@ -163,8 +167,15 @@ export function getLilyPadBob() {
 export function updateLevel(delta, frog) {
     for (const terrace of terraces) terrace.userData.update(delta);
     lilyPadObject?.userData.update(delta); // bobbing pad, fluttering flag
+    scenery?.userData.update(delta); // drifting clouds
     for (const fly of level.flies) fly.update(delta);
     for (const obstacle of level.obstacles) obstacle.update(delta, frog);
+}
+
+// The scenery island under (x, y), if any ({ x, y, radius, top }). They
+// can't be landed on: touching one counts as falling in (physics.js).
+export function islandAt(x, y) {
+    return scenery?.userData.islands.find((island) => Math.hypot(island.x - x, island.y - y) <= island.radius) ?? null;
 }
 
 // What Froggy would stand on at (x, y): a tile ({ type, z, ... }), the lily

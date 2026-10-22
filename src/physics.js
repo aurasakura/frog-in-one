@@ -5,7 +5,7 @@ import { splash, mudSplat } from "./components/Splash.js";
 import { WATER_Z } from "./components/Water.js";
 import { collidesWithProp } from "./components/Props.js";
 import { getAim, takeLaunch, cancelAim, powerupInput, pointer } from "./input.js";
-import { level, surfaceAt, getLilyPadBob } from "./levels/levelBuilder.js";
+import { level, surfaceAt, getLilyPadBob, islandAt } from "./levels/levelBuilder.js";
 import { CELL_SIZE } from "./components/Terrace.js";
 import { addStroke, showMessage, setPowerupSlot, stopTimer } from "./hud.js";
 import { game, setState, completeLevel } from "./gameState.js";
@@ -646,7 +646,10 @@ function updateFlight(delta) {
     face(hop.velocity.x, hop.velocity.y);
     collectFlies();
 
-    if (position.z < FALL_LIMIT_Z || position.z <= WATER_Z) {
+    // Fell off, or came down among a scenery island's trees or houses
+    // (they can't be landed on)
+    const island = islandAt(position.x, position.y);
+    if (position.z < FALL_LIMIT_Z || position.z <= WATER_Z || (island && position.z <= island.top)) {
         fallInWater();
         return;
     }

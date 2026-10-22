@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 export const WATER_Z = -60; // well below the terraces
-const WATER_MARGIN = 3000; // how far the water reaches past the level
+const WATER_MARGIN = 9000; // past the level: out to the camera's far plane, so the water runs to the horizon
 
 // A large water plane under the level. `bounds` is the level's footprint.
 export function Water(bounds) {
