@@ -1,12 +1,17 @@
 import * as THREE from "three";
 import { getViewHeading } from "./components/Camera.js";
+import { getSensitivity } from "./progress.js";
 
 const MAX_DRAG_PX = 220; // drag length for full power (less on small screens)
 const MAX_DRAG_SCREEN_SHARE = 0.35; // ...at most this share of the shorter screen side
 const CANCEL_DRAG_PX = 15; // released closer than this to the start = cancelled
 const PICK_RADIUS_PX = 80; // how close to Froggy a press must start
+const TOUCH_PICK_RADIUS_PX = 110; // ...or a finger, which is less exact
 const PICK_HEIGHT = 12; // aim the pick at Froggy's body, not his feet
-const TURN_PER_PIXEL = 0.008; // right-drag view turn, radians per pixel
+const TURN_PER_PIXEL = 0.008; // view turn, radians per pixel (at normal sensitivity)
+
+// Touch screens (phones, tablets): hints say "tap" instead of naming keys
+export const isTouchScreen = window.matchMedia("(pointer: coarse)").matches;
 
 // --- Keys ---
 
@@ -45,9 +50,20 @@ window.addEventListener("blur", () => {
 // used to steer while gliding
 export const pointer = { x: 0 };
 
-window.addEventListener("pointermove", (event) => {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-});
+// (a touch only reports where it is while a finger is down, so take the
+// press too, and steer straight once it lifts). The finger holding the
+// powerup panel doesn't steer.
+for (const type of ["pointerdown", "pointermove"]) {
+    window.addEventListener(type, (event) => {
+        if (event.target.closest?.(".powerup-panel")) return;
+        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    });
+}
+for (const type of ["pointerup", "pointercancel"]) {
+    window.addEventListener(type, (event) => {
+        if (event.pointerType === "touch" && !event.target.closest?.(".powerup-panel")) pointer.x = 0;
+    });
+}
 
 // --- Slingshot drag (mouse and touch, via pointer events) ---
 
@@ -65,7 +81,9 @@ const drag = {
 };
 let pendingLaunch = null;
 
-// Right-drag turns the camera around Froggy to look at the surroundings
+// Dragging anywhere away from Froggy (or right-dragging anywhere) turns the
+// camera around him to look at the surroundings; the plain drag is what
+// touch screens and touchpads use
 const turnDrag = { active: false, pointerId: null, lastX: 0 };
 let pendingTurn = 0; // radians, collected until the game takes them
 
@@ -76,9 +94,10 @@ let canAim = () => true;
 
 const projected = new THREE.Vector3();
 
+// Higher sensitivity reaches full power with a shorter drag
 function maxDragPx() {
     const shorterSide = Math.min(window.innerWidth, window.innerHeight);
-    return Math.min(MAX_DRAG_PX, shorterSide * MAX_DRAG_SCREEN_SHARE);
+    return Math.min(MAX_DRAG_PX, shorterSide * MAX_DRAG_SCREEN_SHARE) / getSensitivity();
 }
 
 function isNearFroggy(clientX, clientY) {
@@ -89,7 +108,8 @@ function isNearFroggy(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     const screenX = rect.left + ((projected.x + 1) / 2) * rect.width;
     const screenY = rect.top + ((1 - projected.y) / 2) * rect.height;
-    return Math.hypot(clientX - screenX, clientY - screenY) <= PICK_RADIUS_PX;
+    const radius = isTouchScreen ? TOUCH_PICK_RADIUS_PX : PICK_RADIUS_PX;
+    return Math.hypot(clientX - screenX, clientY - screenY) <= radius;
 }
 
 // Aim for the drag so far: { direction: Vector2 on the ground, power 0–1 },
@@ -114,8 +134,12 @@ function onPointerDown(event) {
         startTurn(event);
         return;
     }
-    if (event.button !== 0) return;
-    if (drag.active || !canAim() || !isNearFroggy(event.clientX, event.clientY)) return;
+    if (event.button !== 0 || !event.isPrimary) return;
+    if (drag.active || !canAim()) return;
+    if (!isNearFroggy(event.clientX, event.clientY)) {
+        startTurn(event);
+        return;
+    }
 
     event.preventDefault();
     canvas.setPointerCapture(event.pointerId);
@@ -141,7 +165,7 @@ function startTurn(event) {
 function onPointerMove(event) {
     if (turnDrag.active && event.pointerId === turnDrag.pointerId) {
         // Dragging right turns the view to the right (clockwise from above)
-        pendingTurn -= (event.clientX - turnDrag.lastX) * TURN_PER_PIXEL;
+        pendingTurn -= (event.clientX - turnDrag.lastX) * TURN_PER_PIXEL * getSensitivity();
         turnDrag.lastX = event.clientX;
         return;
     }

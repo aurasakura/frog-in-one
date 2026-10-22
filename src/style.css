@@ -2,6 +2,9 @@ body {
   margin: 0;
   overflow: hidden;
   font-family: sans-serif;
+  touch-action: manipulation; /* no double-tap zoom on phones */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none; /* no long-press menu while holding a button */
 }
 
 canvas.game {
@@ -140,15 +143,15 @@ canvas.game {
   }
 }
 
-/* Mute and pause, top right */
+/* Settings and pause, top right */
 
 .corner-buttons {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
   display: flex;
   gap: 8px;
-  z-index: 2; /* stays usable above menus (mute) */
+  z-index: 2; /* stays usable above menus (settings) */
 }
 
 .round-button {
@@ -171,17 +174,92 @@ canvas.game {
   height: 24px;
 }
 
-.mute-button .icon-muted,
-.mute-button.muted .icon-sound {
-  display: none;
+.settings-button svg {
+  transition: transform 0.25s ease-out;
 }
 
-.mute-button.muted .icon-muted {
-  display: block;
+.settings-button.open svg {
+  transform: rotate(60deg);
+}
+
+/* Settings panel, dropping down under the gear */
+.settings-panel {
+  position: absolute;
+  top: calc(max(16px, env(safe-area-inset-top)) + 52px);
+  right: max(16px, env(safe-area-inset-right));
+  z-index: 2;
+  width: min(280px, calc(100vw - 32px));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px 16px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.72);
+  color: white;
+  user-select: none;
+  animation: settings-in 0.18s ease-out;
+}
+
+@keyframes settings-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.settings-panel h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #F2C14E;
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setting-name {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.setting-name output {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.setting-hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.setting input[type="range"] {
+  width: 100%;
+  height: 28px; /* easy to grab with a finger */
+  margin: 0;
+  accent-color: #F2C14E;
+  cursor: pointer;
+  touch-action: pan-x;
+}
+
+.setting-toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.setting-toggle input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: #F2C14E;
+  cursor: pointer;
 }
 
 /* Hide the in-game HUD in menus and cutscenes (body[data-state] is set by
-   gameState.js); the mute button stays */
+   gameState.js); the settings button stays */
 body[data-state="title"] :is(.hud, .powerup-panel, .pause-button, .message),
 body[data-state="levelSelect"] :is(.hud, .powerup-panel, .pause-button, .message),
 body[data-state="intro"] :is(.hud, .powerup-panel, .pause-button, .message),
@@ -440,8 +518,17 @@ body[data-state="levelComplete"] :is(.hud, .powerup-panel) {
   min-width: 220px;
 }
 
-.overlay button:not(.wood):hover {
-  background: #E8F5E9;
+@media (hover: hover) {
+  .overlay button:not(.wood):hover {
+    background: #E8F5E9;
+  }
+}
+
+/* Touch screens: the powerup panel is tapped, so no E key badge */
+@media (pointer: coarse) {
+  .powerup-key {
+    display: none;
+  }
 }
 
 /* --- Aim guide power bar --- */

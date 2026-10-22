@@ -10,6 +10,7 @@ import { updateLevel } from './levels/levelBuilder.js';
 import { initInput, takeViewTurn } from './input.js';
 import { updatePhysics, updateModel, getFrog, hop, isMidHop, canAim } from './physics.js';
 import { updateHud, getStrokes } from './hud.js';
+import './settings.js';
 import { updateTutorial } from './tutorial.js';
 import { game, isPlaying, isCutscene, initGameState, updateGameState, getIntroProgress } from './gameState.js';
 import { isCutsceneRunning, updateCutscene } from './cutscenes.js';

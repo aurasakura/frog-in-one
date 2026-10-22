@@ -1,4 +1,5 @@
 import { getAudioContext, getMuted, onMuteChange } from "./sound.js";
+import { getMusicVolume, setMusicVolume as saveMusicVolume } from "./progress.js";
 
 // Background music, composed here and played with Web Audio (no audio
 // files), like the sound effects. Five looping tracks:
@@ -9,7 +10,8 @@ import { getAudioContext, getMuted, onMuteChange } from "./sound.js";
 //            being far from home
 //   ending - a sweet waltz, while Froggy meets his wife
 // playMusic(name) crossfades to a track (or keeps it going if it's already
-// playing); stopMusic() fades out. Mute silences music along with sounds.
+// playing); stopMusic() fades out. Mute silences music along with sounds;
+// the music volume setting (settings.js) scales it.
 
 const MUSIC_VOLUME = 0.32;
 const FADE_TIME = 0.6; // seconds to fade between tracks
@@ -258,20 +260,34 @@ for (const track of Object.values(TRACKS)) {
 // --- Playback ---
 
 let master = null; // music volume (0 while muted)
+let volume = getMusicVolume(); // the player's setting, 0–1
+
+function masterLevel() {
+    return getMuted() ? 0 : MUSIC_VOLUME * volume;
+}
 let current = null; // { name, gain, timer }
 
 function masterGain(ctx) {
     if (!master) {
         master = ctx.createGain();
-        master.gain.value = getMuted() ? 0 : MUSIC_VOLUME;
+        master.gain.value = masterLevel();
         master.connect(ctx.destination);
     }
     return master;
 }
 
-onMuteChange((muted) => {
-    if (master) master.gain.setTargetAtTime(muted ? 0 : MUSIC_VOLUME, master.context.currentTime, 0.05);
-});
+function applyVolume() {
+    if (master) master.gain.setTargetAtTime(masterLevel(), master.context.currentTime, 0.05);
+}
+
+onMuteChange(applyVolume);
+
+// Change the music volume (0–1, remembered between visits)
+export function setMusicVolume(level) {
+    saveMusicVolume(level);
+    volume = getMusicVolume();
+    applyVolume();
+}
 
 function fadeOut(playing, ctx) {
     clearInterval(playing.timer);

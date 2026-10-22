@@ -1,4 +1,5 @@
 import { hasSeenTip, markTipSeen } from "./progress.js";
+import { isTouchScreen } from "./input.js";
 
 // First-touch tips: a short card the first time Froggy meets each mechanic,
 // shown once and remembered (saved progress). Powerups show theirs on every
@@ -17,9 +18,15 @@ export const TIPS = {
     sprinkler: ["Sprinkler", "Its spray blows Froggy off course while he's in the air."],
     hoseJet: ["Hose", "Watch for the drip, then the jet. It knocks Froggy sideways."],
     washingLine: ["Laundry", "Pass under when it's swung up. Hanging down, it knocks you away."],
-    doubleHop: ["Double Hop", "Press E in mid-air for an extra hop."],
-    glide: ["Glide", "Hold E in mid-air to float down slowly. Steer with the mouse."],
-    superLeap: ["Super Leap", "Press E before a shot, then hop: 1.5× the power."],
+    doubleHop: ["Double Hop", isTouchScreen
+        ? "Tap the powerup button in mid-air for an extra hop."
+        : "Press E in mid-air for an extra hop."],
+    glide: ["Glide", isTouchScreen
+        ? "Hold the powerup button in mid-air to float down slowly. Steer by touching left or right with another finger."
+        : "Hold E in mid-air to float down slowly. Steer with the mouse."],
+    superLeap: ["Super Leap", isTouchScreen
+        ? "Tap the powerup button before a shot, then hop: 1.5× the power."
+        : "Press E before a shot, then hop: 1.5× the power."],
 };
 
 const card = document.querySelector(".tip-card");

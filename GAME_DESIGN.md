@@ -165,8 +165,9 @@ All menus are HTML overlays on top of the canvas.
 - **Tutorial (How to Play):** a card for every mechanic, grouped into Playing, Ground, Obstacles and Powerup flies, each with its signpost drawing and its tip text.
 - **Level select:** all 5 levels, each showing its best stars (0–3) and par, plus the total. A level **unlocks when the one before it is completed**; level 1 is always unlocked. **Back** returns to wherever it was opened from (title or pause menu).
 - **Pause menu** (Esc, or a pause button): **Resume**, **Restart** (the current level, with strokes and timer reset), **Level Select** and **Quit to Main Menu** (back to the title screen).
-- **Saved progress** (`progress.js`): best stars per level (unlocks follow from them) and the mute setting are saved in `localStorage` under `froggy-golf-progress`. Every read and write is wrapped in `try/catch`. If storage isn't available (private mode, blocked), the game still works and just doesn't remember progress.
-- **Mute button:** top right, next to pause, available on every screen.
+- **Saved progress** (`progress.js`): best stars per level (unlocks follow from them) and the settings (mute, sensitivity, music volume) are saved in `localStorage` under `froggy-golf-progress`. Every read and write is wrapped in `try/catch`. If storage isn't available (private mode, blocked), the game still works and just doesn't remember progress.
+- **Settings button** (`settings.js`): a gear top right, next to pause, available on every screen. It opens a small panel with mouse/touch sensitivity (how far you drag for full power and how fast the view turns), music volume and a mute-all toggle.
+- **Touch and touchpad:** everything works with one finger. Drag from Froggy to aim; drag anywhere else to look around (right-drag also works with a mouse); hold the powerup panel instead of E. On touch screens the hints say "tap" instead of naming keys.
 
 ## 12. Implementation status
 
@@ -182,7 +183,7 @@ The arcade prototype (enemies, attack, score-based difficulty, Game Over) has be
 | Levels (§8) | Done | All 5 levels, cumulative, each with a safe route and a shortcut; neighbourhood props. Par and time targets need playtesting |
 | Camera (§9) | Done | Chase camera with resize handling. Cutscene camera paths not built yet |
 | Game states (§10) | Done | All states have screens; the game boots to the title. `body[data-state]` mirrors the state so CSS can hide the HUD in menus and cutscenes |
-| Menus (§11) | Done | Title, level select, pause menu, saved progress, mute |
+| Menus (§11) | Done | Title, level select, pause menu, saved progress, settings |
 | Cutscenes (§1) | Done | Intro sweep and outro with the wife, both skippable (click or Space) |
 | Polish | Done | See below |
 
@@ -265,8 +266,9 @@ src/
   hud.js               level, strokes/par, time/target (top), powerup panel with E badge (right), messages
   powerups.js          powerup definitions + icon drawing (shared by flies and HUD)
   sound.js             synthesized sound effects + mute
+  settings.js          settings panel (sensitivity, music volume, mute)
   menus.js             title and level select screens
-  progress.js          localStorage save/load (best stars, mute), try/catch
+  progress.js          localStorage save/load (best stars, settings), try/catch
   cutscenes.js         intro sweep and outro, skippable
   levels/
     index.js           LEVELS list

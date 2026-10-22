@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/tode.svg" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Frog-in-One</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,17 +23,30 @@
      <span class="powerup-name">No powerup</span>
    </button>
    <div class="corner-buttons">
-     <button class="mute-button round-button" aria-label="Mute sound">
-       <svg class="icon-sound" viewBox="0 0 24 24" aria-hidden="true">
-         <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
-         <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" />
-       </svg>
-       <svg class="icon-muted" viewBox="0 0 24 24" aria-hidden="true">
-         <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
-         <path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+     <button class="settings-button round-button" aria-label="Settings" title="Settings" aria-expanded="false" aria-controls="settings-panel">
+       <svg viewBox="0 0 24 24" aria-hidden="true">
+         <path fill="currentColor" fill-rule="evenodd" d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.7a7 7 0 0 1 0 2l2 1.7-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.7a7 7 0 0 1 0-2l-2-1.7 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9L10.3 2zM12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8z" />
        </svg>
      </button>
      <button class="pause-button round-button" aria-label="Pause">II</button>
+   </div>
+
+   <!-- Settings (settings.js): opened from the gear, top right -->
+   <div id="settings-panel" class="settings-panel" role="dialog" aria-label="Settings" hidden>
+     <h2>Settings</h2>
+     <label class="setting">
+       <span class="setting-name">Sensitivity <output class="sensitivity-value"></output></span>
+       <input class="sensitivity-input" type="range" min="0.25" max="2.5" step="0.05" />
+       <span class="setting-hint">How far you drag to aim and turn the view</span>
+     </label>
+     <label class="setting">
+       <span class="setting-name">Music volume <output class="music-value"></output></span>
+       <input class="music-input" type="range" min="0" max="100" step="1" />
+     </label>
+     <label class="setting setting-toggle">
+       <input class="mute-input" type="checkbox" />
+       <span class="setting-name">Mute all sound</span>
+     </label>
    </div>
    <div class="message"></div>
 

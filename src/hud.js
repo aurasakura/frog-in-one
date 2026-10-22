@@ -1,6 +1,5 @@
 import { POWERUPS, powerupIconCanvas } from "./powerups.js";
 import { powerupInput } from "./input.js";
-import { getMuted, toggleMuted } from "./sound.js";
 
 // In-game HUD (§5): level, hops (strokes) vs par and time vs target along the top,
 // the powerup panel on the right, plus short messages like "Splash! Try again"
@@ -103,21 +102,3 @@ export function showMessage(text) {
     void messageElement.offsetWidth;
     messageElement.classList.add("show");
 }
-
-// --- Mute button (top right, next to pause) ---
-
-const muteButton = document.querySelector(".mute-button");
-
-function showMuteState() {
-    const muted = getMuted();
-    muteButton.classList.toggle("muted", muted);
-    muteButton.setAttribute("aria-label", muted ? "Unmute sound" : "Mute sound");
-    muteButton.title = muted ? "Unmute sound" : "Mute sound";
-}
-
-muteButton.addEventListener("pointerdown", (event) => event.preventDefault()); // keep focus off it
-muteButton.addEventListener("click", () => {
-    toggleMuted();
-    showMuteState();
-});
-showMuteState();

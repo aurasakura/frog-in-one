@@ -5,8 +5,9 @@ import { setFrogExpression, updateFrogBlink } from "./components/FrogModel.js";
 import { CELL_SIZE } from "./components/Terrace.js";
 import { level, surfaceAt } from "./levels/levelBuilder.js";
 import { playChirp, playLand, playLaunch } from "./sound.js";
+import { isTouchScreen } from "./input.js";
 
-// Intro and outro cutscenes (§1). Both are skippable (click or Space).
+// Intro and outro cutscenes (§1). Both are skippable (click, tap or Space).
 // While one runs it drives the camera; when it finishes it calls `onDone`
 // once and keeps gently animating until stopCutscene().
 
@@ -332,3 +333,4 @@ export function stopCutscene() {
 }
 
 cutsceneLayer.addEventListener("click", skipCutscene);
+if (isTouchScreen) cutsceneLayer.querySelector(".cutscene-skip").textContent = "Tap to skip";
