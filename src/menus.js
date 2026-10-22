@@ -64,7 +64,7 @@ const HOW_TO_PLAY = [
         heading: "Playing",
         cards: [
             { icon: "hop", title: "Hop", text: "Press on Froggy, drag back to aim and let go to hop. Drag further for a bigger jump." },
-            { icon: "goal", title: "Goal", text: "Land on the lily pad by the red flag in as few strokes as you can." },
+            { icon: "goal", title: "Goal", text: "Land on the lily pad by the red flag in as few hops as you can." },
             { icon: "water", title: "Water", text: TIPS.water[1] },
         ],
     },

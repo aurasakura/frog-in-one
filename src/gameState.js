@@ -46,7 +46,7 @@ const TRANSITIONS = {
     sliding: ["aiming", "flying", "levelComplete", "paused", "levelIntro"],
     levelComplete: ["levelIntro", "outro", "levelSelect"],
     outro: ["title", "levelSelect"],
-    paused: ["levelIntro", "aiming", "flying", "sliding", "levelSelect"],
+    paused: ["levelIntro", "aiming", "flying", "sliding", "levelSelect", "title"],
     levelSelect: ["levelIntro", "title", "paused"],
 };
 
@@ -205,6 +205,13 @@ function nextLevel() {
     });
 }
 
+// Back to the title screen (from the pause menu or the outro), with level 1
+// ready behind it
+function quitToTitle() {
+    setState("title");
+    prepareLevel(0);
+}
+
 function pause() {
     game.pausedFrom = game.state;
     setState("paused");
@@ -244,7 +251,7 @@ function finishLevel() {
     const holeInOne = strokes === 1;
     if (holeInOne || strokes < par) {
         confetti.play(player.position.x, player.position.y, player.position.z);
-        showMessage(holeInOne ? "Hole in one!" : "Under par!");
+        showMessage(holeInOne ? "Frog in one!" : "Under par!");
     }
 
     // The big stars fill from the left, whichever ones were earned
@@ -253,7 +260,7 @@ function finishLevel() {
     });
     const reasons = completeScreen.querySelectorAll(".star-reasons li");
     reasons[0].textContent = "Finished the level";
-    reasons[1].textContent = `${strokes} / ${par} strokes`;
+    reasons[1].textContent = `${strokes} / ${par} hops`;
     reasons[2].textContent = `Time ${formatTime(time)} / ${formatTime(timeTarget)}`;
     reasons.forEach((reason, i) => reason.classList.toggle("earned", earned[i]));
 
@@ -269,10 +276,8 @@ completeScreen.querySelector(".next").addEventListener("click", nextLevel);
 pauseScreen.querySelector(".resume").addEventListener("click", resume);
 pauseScreen.querySelector(".restart").addEventListener("click", () => startLevel(game.levelIndex));
 pauseScreen.querySelector(".open-level-select").addEventListener("click", () => setState("levelSelect"));
-outroScreen.querySelector(".play-again").addEventListener("click", () => {
-    setState("title");
-    prepareLevel(0);
-});
+pauseScreen.querySelector(".quit").addEventListener("click", quitToTitle);
+outroScreen.querySelector(".play-again").addEventListener("click", quitToTitle);
 outroScreen.querySelector(".open-level-select").addEventListener("click", () => setState("levelSelect"));
 outroScreen.querySelector(".open-leaderboard").addEventListener("click", () => showLeaderboard(outroScreen));
 document.querySelector(".pause-button").addEventListener("click", () => {

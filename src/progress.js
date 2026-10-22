@@ -4,7 +4,7 @@
 // wrapped in try/catch, so with storage unavailable (private mode, blocked)
 // the game still works and simply doesn't remember anything.
 
-const STORAGE_KEY = "froggy-golf-progress";
+const STORAGE_KEY = "froggy-golf-progress"; // from the game's old name; kept so saves carry over
 export const MAX_NAME_LENGTH = 16;
 
 const progress = load();

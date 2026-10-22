@@ -4,12 +4,13 @@ import { getPlayerName } from "./progress.js";
 
 // Leaderboard: every player's best finish on each level (fewest strokes,
 // then fastest time), and an overall table adding those up. Shared through
-// the /api/leaderboard Netlify Function (netlify/functions/leaderboard.mjs).
+// the /api/leaderboard Netlify Function (netlify/functions/leaderboard.mjs);
+// builds hosted elsewhere (itch.io) set VITE_LEADERBOARD_URL to its full URL.
 // Finishes are also kept in localStorage, so when the API can't be reached
 // (e.g. under plain `vite dev`) the board still shows this device's players.
 
-const API = "/api/leaderboard";
-const STORAGE_KEY = "froggy-golf-leaderboard";
+const API = import.meta.env.VITE_LEADERBOARD_URL || "/api/leaderboard";
+const STORAGE_KEY = "froggy-golf-leaderboard"; // old game name, kept like progress.js's
 
 // { [playerName]: { [levelIndex]: { strokes, par, time } } }
 const localRecords = loadLocal();
@@ -138,7 +139,7 @@ function render() {
         status.textContent = shared ? "" : "Couldn't reach the online leaderboard: showing players on this device.";
     }
 
-    const headings = selected === "all" ? ["Total strokes (par)", "Total time"] : ["Strokes (par)", "Time"];
+    const headings = selected === "all" ? ["Total hops (par)", "Total time"] : ["Hops (par)", "Time"];
     const head = document.createElement("tr");
     for (const text of ["#", "Player", ...headings]) {
         const th = document.createElement("th");

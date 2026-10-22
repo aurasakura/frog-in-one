@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { player, model } from "./components/Player.js";
 import { Wife } from "./components/Wife.js";
-import { setFrogExpression } from "./components/FrogModel.js";
+import { setFrogExpression, updateFrogBlink } from "./components/FrogModel.js";
 import { CELL_SIZE } from "./components/Terrace.js";
 import { level, surfaceAt } from "./levels/levelBuilder.js";
 import { playChirp, playLand, playLaunch } from "./sound.js";
@@ -14,7 +14,7 @@ const INTRO_DURATION = 10; // seconds
 const INTRO_LINES = [
     { from: 0.3, to: 3.4, text: "Froggy is a long way from home…" },
     { from: 3.6, to: 6.7, text: "…and his wife is waiting by the garden pond with dinner." },
-    { from: 6.9, to: 9.9, text: "Hop him home in as few strokes as you can!" },
+    { from: 6.9, to: 9.9, text: "Hop him home in as few hops as you can!" },
 ];
 
 const OUTRO_ORBIT_RADIUS = 170;
@@ -249,6 +249,8 @@ export function startOutro(scene, onDone) {
             const smile = smoothstep((time - together) / OUTRO_SMILE_TIME);
             if (model) setFrogExpression(model, smile, 0, time);
             setFrogExpression(wife.userData.model, smile, 0, time);
+            if (model) updateFrogBlink(model, delta);
+            updateFrogBlink(wife.userData.model, delta);
 
             // Love hearts float up around them, swaying and fading
             if (time > together) {

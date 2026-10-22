@@ -2,7 +2,7 @@ import { POWERUPS, powerupIconCanvas } from "./powerups.js";
 import { powerupInput } from "./input.js";
 import { getMuted, toggleMuted } from "./sound.js";
 
-// In-game HUD (§5): level, strokes vs par and time vs target along the top,
+// In-game HUD (§5): level, hops (strokes) vs par and time vs target along the top,
 // the powerup panel on the right, plus short messages like "Splash! Try again"
 const levelElement = document.querySelector(".hud-level");
 const strokesElement = document.querySelector(".hud-strokes");
@@ -58,7 +58,7 @@ export function getElapsedTime() {
 export function updateHud(delta) {
     if (timerRunning) elapsed += delta;
 
-    strokesElement.textContent = `Strokes ${strokes} / Par ${par}`;
+    strokesElement.textContent = `Hops ${strokes} / Par ${par}`;
     strokesElement.classList.toggle("over", strokes > par);
     timeElement.textContent = `${formatTime(elapsed)} / ${formatTime(timeTarget)}`;
     timeElement.classList.toggle("over", elapsed >= timeTarget);

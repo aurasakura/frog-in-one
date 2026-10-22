@@ -34,6 +34,17 @@ const camera = Camera(); // chase camera, moved every frame below
 
 const title = TitleScene(); // Froggy on his lily pad, behind the title screen
 
+// The title screen covers the canvas, so it passes on clicks on Froggy (he
+// backflips) and shows a pointer over him; the menu keeps its own clicks
+const titleScreen = document.querySelector('.title-screen');
+titleScreen.addEventListener('click', (event) => {
+  if (!event.target.closest('.title-menu')) title.click(event.clientX, event.clientY);
+});
+titleScreen.addEventListener('pointermove', (event) => {
+  const over = !event.target.closest('.title-menu') && title.isOverFrog(event.clientX, event.clientY);
+  titleScreen.style.cursor = over ? 'pointer' : '';
+});
+
 const renderer = Renderer();
 initInput(renderer.domElement, camera, player, canAim);
 

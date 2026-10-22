@@ -1,11 +1,13 @@
 import * as THREE from "three";
-import { FrogModel, FROGGY_COLORS, setFrogExpression } from "./FrogModel.js";
+import { FrogModel, FROGGY_COLORS, setFrogExpression, updateFrogBlink } from "./FrogModel.js";
 import { LilyPad, LILY_PAD_HEIGHT } from "./LilyPad.js";
+import { playLaunch, playLand } from "../sound.js";
 
 // The title screen's own little scene: Froggy on a lily pad in a pond,
 // bobbing on the water and every so often waving, grinning or doing a
-// little hop. The camera frames him on the right of the screen (the menu
-// is on the left), or near the top on a tall, narrow screen.
+// little hop. Click him and he does a backflip. The camera frames him on
+// the right of the screen (the menu is on the left), or near the top on a
+// tall, narrow screen.
 
 const FOV = 38; // degrees
 const CAMERA_DISTANCE = 95;
@@ -29,6 +31,11 @@ const ACTIONS = [
     { name: "hop", duration: 0.7, weight: 1 },
 ];
 const HOP_HEIGHT = 14;
+// Clicked: he springs up, backflips (turning around his middle) with a grin
+// and lands back on the pad
+const FLIP = { name: "flip", duration: 1 };
+const FLIP_HEIGHT = 26;
+const FLIP_MIDDLE = 6.5; // height of his middle above his feet, which the flip turns around
 
 const RIPPLE_COUNT = 3;
 const RIPPLE_TIME = 3; // seconds for a ripple to spread and fade
@@ -45,6 +52,11 @@ function pickAction() {
     }
     return ACTIONS[0];
 }
+
+const smoothstep = (t) => {
+    const x = Math.min(1, Math.max(0, t));
+    return x * x * (3 - 2 * x);
+};
 
 // 0 → 1 → 0 over an action, easing in and out at the ends
 function envelope(t, edge = 0.2) {
@@ -160,13 +172,20 @@ export function TitleScene() {
         ripples.push(ripple);
     }
 
-    // Froggy
+    // Froggy: the group bobs and hops, the pivot (at his middle) flips
     const frog = new THREE.Group();
+    const pivot = new THREE.Group();
+    pivot.position.z = FLIP_MIDDLE;
+    frog.add(pivot);
     const model = FrogModel(FROGGY_COLORS);
     model.rotation.x = Math.PI / 2; // stand the y-up model upright in the z-up world
     model.rotation.y = FROG_TURN;
-    frog.add(model);
+    model.position.z = -FLIP_MIDDLE;
+    pivot.add(model);
     scene.add(frog);
+    // The axis to his right (he faces -y, turned by FROG_TURN): turning
+    // around it tips him backwards
+    const flipAxis = new THREE.Vector3(-Math.cos(FROG_TURN), -Math.sin(FROG_TURN), 0);
 
     const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 3000);
     camera.up.set(0, 0, 1);
@@ -192,6 +211,23 @@ export function TitleScene() {
     let action = null;
     let actionTime = 0;
     let nextAction = random(1, 2);
+    let landed = true;
+
+    // Clicking Froggy (at screen position x, y) makes him backflip
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    function isOverFrog(x, y) {
+        pointer.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
+        raycaster.setFromCamera(pointer, camera);
+        return raycaster.intersectObject(model, true).length > 0;
+    }
+    function click(x, y) {
+        if (action?.name === "flip" || !isOverFrog(x, y)) return;
+        action = FLIP;
+        actionTime = 0;
+        landed = false;
+        playLaunch();
+    }
 
     function update(delta) {
         time += delta;
@@ -214,9 +250,21 @@ export function TitleScene() {
         const progress = action ? actionTime / action.duration : 0;
         const name = action?.name;
         const wave = name === "wave" || name === "waveSmile" ? envelope(progress) : 0;
-        const smile = name === "smile" || name === "waveSmile" ? envelope(progress, 0.15) : 0;
-        const hop = name === "hop" ? Math.sin(progress * Math.PI) * HOP_HEIGHT : 0;
+        let smile = name === "smile" || name === "waveSmile" ? envelope(progress, 0.15) : 0;
+        let hop = name === "hop" ? Math.sin(progress * Math.PI) * HOP_HEIGHT : 0;
+        let flip = 0;
+        if (name === "flip") {
+            hop = Math.sin(progress * Math.PI) * FLIP_HEIGHT;
+            flip = smoothstep((progress - 0.1) / 0.75) * Math.PI * 2; // a full turn while in the air
+            smile = envelope(progress, 0.15);
+            if (!landed && progress > 0.97) {
+                landed = true;
+                playLand();
+            }
+        }
+        pivot.quaternion.setFromAxisAngle(flipAxis, flip);
         setFrogExpression(model, smile, wave, time);
+        updateFrogBlink(model, delta);
 
         // Bob with the pad, plus his own little bounce (squashing at the bottom)
         const bounce = (Math.sin(time * BOB_SPEED) + 1) / 2;
@@ -232,5 +280,5 @@ export function TitleScene() {
         }
     }
 
-    return { scene, camera, update };
+    return { scene, camera, update, click, isOverFrog };
 }

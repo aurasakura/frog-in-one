@@ -1,4 +1,6 @@
-# Froggy Golf — Game Design
+# Frog-in-One — Game Design
+
+(Formerly "Froggy Golf". On screen a stroke is called a **hop**; the code and saved data still say `strokes`.)
 
 Reference for every future change. If code and this document disagree, update one of them on purpose.
 
@@ -156,11 +158,11 @@ A **third-person chase camera**. It's added to the scene directly, **not** as a 
 
 All menus are HTML overlays on top of the canvas.
 
-- **Title screen** (its own scene, `components/TitleScene.js`): Froggy sits on a lily pad in a pond on the right (above the menu on tall, narrow screens), bobbing on the water and every few seconds waving, grinning or doing a little hop. The menu on the left has a **name** field (remembered in saved progress; used on the stars and outro screens) and wooden buttons: **Start** (enabled once a name is entered) continues from the first unfinished level (the intro plays whenever that is level 1), **Tutorial** opens How to Play, **Level Select** and **Leaderboard**. All four buttons are the same size.
+- **Title screen** (its own scene, `components/TitleScene.js`): Froggy sits on a lily pad in a pond on the right (above the menu on tall, narrow screens), bobbing on the water and every few seconds waving, grinning or doing a little hop; clicking him makes him backflip. The menu on the left has a **name** field (remembered in saved progress; used on the stars and outro screens) and wooden buttons: **Start** (enabled once a name is entered) continues from the first unfinished level (the intro plays whenever that is level 1), **Tutorial** opens How to Play, **Level Select** and **Leaderboard**. All four buttons are the same size.
 - **Leaderboard:** every player's best finish on each level (fewest strokes, then fastest), with an **Overall** tab adding them up (strokes against par, total time) for players who have finished all 5 levels. Opened from the title screen or the outro (centred below **Play Again** and **Level Select**, which sit side by side). Shared online through a Netlify Function (`netlify/functions/leaderboard.mjs`, stored in Netlify Blobs, par taken from the level data); finishes are also kept in localStorage, which the board falls back to when the API can't be reached (e.g. plain `vite dev`; use `netlify dev` to run the function locally).
 - **Tutorial (How to Play):** a card for every mechanic, grouped into Playing, Ground, Obstacles and Powerup flies, each with its signpost drawing and its tip text.
 - **Level select:** all 5 levels, each showing its best stars (0–3) and par, plus the total. A level **unlocks when the one before it is completed**; level 1 is always unlocked. **Back** returns to wherever it was opened from (title or pause menu).
-- **Pause menu** (Esc, or a pause button): **Resume**, **Restart** (the current level, with strokes and timer reset) and **Level Select**.
+- **Pause menu** (Esc, or a pause button): **Resume**, **Restart** (the current level, with strokes and timer reset), **Level Select** and **Quit to Main Menu** (back to the title screen).
 - **Saved progress** (`progress.js`): best stars per level (unlocks follow from them) and the mute setting are saved in `localStorage` under `froggy-golf-progress`. Every read and write is wrapped in `try/catch`. If storage isn't available (private mode, blocked), the game still works and just doesn't remember progress.
 - **Mute button:** top right, next to pause, available on every screen.
 
@@ -191,7 +193,8 @@ The arcade prototype (enemies, attack, score-based difficulty, Game Over) has be
 - **Landing dust:** a puff tinted by the surface; mud has its own splat.
 - **Fly sparkle:** stars in the powerup's colour when Froggy eats a fly.
 - **Victory on the lily pad** (every finish): Froggy does a backflip around his own middle that carries him to the exact centre of the pad, turns round to face the camera, then grins with closed happy eyes (^ ^) and waves an arm. The camera swoops in low and close for a three-quarter close-up of his face. The stars screen waits until he's done (about 2.4 s), then shows "Level complete!" above him and the stars, results and buttons below him, so he stays in view in the middle.
-- **Celebration** (hole in one or under par): confetti and a "Hole in one!" / "Under par!" message on top of the victory.
+- **Blinking:** every frog (in play, on the title screen and in the outro) blinks every 2–5 s, sometimes twice in a row (`updateFrogBlink` in `components/FrogModel.js`).
+- **Celebration** (hole in one or under par): confetti and a "Frog in one!" / "Under par!" message on top of the victory.
 - **Screen shake:** gentle shake when an obstacle knocks Froggy, smaller when he bumps a wall or prop (`shakeCamera` in `Camera.js`).
 - **Sounds:** launch, landing, splash, mud splat, gulp, slime boing, obstacle thump, washing-line whoosh, powerup use, level complete fanfare, and chirps in the outro. All are synthesized in `sound.js` (original, no audio files) and respect the mute setting.
 
@@ -309,7 +312,7 @@ Current values, all constants at the top of the named file. These are first gues
 | Idle / wind-up | breath 3% every ~2 s; croak every 2.5–4.5 s, 0.45 s, 18% wider; crouch 32%, lean 0.35 rad, tremble from 60% power | `physics.js` |
 | Launch shake / aim rumble / look-around | 4 × power³ / up to 1.6 from 35% power / 0.008 rad per pixel of right-drag | `physics.js`, `Camera.js`, `input.js` |
 | Sprinkler | spin 1.2 rad/s, 50° sector, radius 170, wind 520 | `components/Sprinkler.js` |
-| Hose jet | off 2.2 s, warning 0.8 s, on 1.4 s; knock 260 sideways + 170 up | `components/HoseJet.js` |
+| Hose jet | off 2.2 s, warning 0.8 s, on 1.4 s; knock 260 sideways + 170 up; Froggy tips 1 rad back onto his butt, keeps 85% of his speed landing and slides butt-first on 60% friction (not on wet pavement) until he stops and stands up | `components/HoseJet.js`, `physics.js` |
 | Washing line | line at 60; 3.2 s swing, lifted past 1.0 rad; garments 20–48 long (longer than ~36 reach Froggy); knock 230 along the swing + 150 up | `components/WashingLine.js` |
 | Fly patterns | bounce 18 high; drift radius 30; dart radius 45 every 0.9 s | `components/Fly.js` |
 

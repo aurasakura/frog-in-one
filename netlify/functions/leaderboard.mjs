@@ -7,6 +7,7 @@ import { LEVELS } from "../../src/levels/index.js";
 //        that player's best on the level (fewest strokes, then fastest)
 // Each player is one blob, so two players finishing at once can't
 // overwrite each other. Par comes from the level data, not the request.
+// Open to other origins (CORS), so the itch.io copy of the game can use it.
 
 const MAX_NAME_LENGTH = 16;
 const MAX_STROKES = 999;
@@ -14,10 +15,15 @@ const MAX_TIME = 24 * 60 * 60; // seconds
 
 const store = () => getStore({ name: "leaderboard", consistency: "strong" });
 const playerKey = (name) => `player/${encodeURIComponent(name)}`;
+const CORS = {
+    "access-control-allow-origin": "*",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
+    "access-control-allow-headers": "content-type",
+};
 const json = (body, status = 200) =>
     new Response(JSON.stringify(body), {
         status,
-        headers: { "content-type": "application/json", "cache-control": "no-store" },
+        headers: { "content-type": "application/json", "cache-control": "no-store", ...CORS },
     });
 
 const isBetter = (a, b) => !b || a.strokes < b.strokes || (a.strokes === b.strokes && a.time < b.time);
@@ -65,6 +71,7 @@ async function submit(req) {
 
 export default async (req) => {
     try {
+        if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
         if (req.method === "GET") return await list();
         if (req.method === "POST") return await submit(req);
         return json({ error: "Method not allowed" }, 405);

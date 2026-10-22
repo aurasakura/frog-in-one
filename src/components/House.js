@@ -10,7 +10,9 @@ let templatePromise = null;
 function loadTemplate() {
     if (!templatePromise) {
         templatePromise = new GLTFLoader()
-            .loadAsync("/models/small_house.glb") // files in public/ are served from the site root
+            // Files in public/ sit next to index.html; relative, so the game
+            // also works from a sub-folder (e.g. on itch.io)
+            .loadAsync(`${import.meta.env.BASE_URL}models/small_house.glb`)
             .then((gltf) => {
                 const template = gltf.scene;
                 template.scale.setScalar(HOUSE_SCALE);

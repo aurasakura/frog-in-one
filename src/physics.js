@@ -12,7 +12,7 @@ import { game, setState, completeLevel } from "./gameState.js";
 import { POWERUPS } from "./powerups.js";
 import { dust, sparkles, frogShadow } from "./components/Effects.js";
 import { shakeCamera } from "./components/Camera.js";
-import { setFrogExpression } from "./components/FrogModel.js";
+import { setFrogExpression, updateFrogBlink } from "./components/FrogModel.js";
 import { showTip, showTipAlways } from "./tips.js";
 import {
     playSplash,
@@ -101,6 +101,14 @@ const TREMBLE_FROM = 0.6; // power where trembling starts
 const TREMBLE_AMOUNT = 0.7; // world units at full power
 const TREMBLE_SPEED = 55; // radians per second
 
+// Knocked over by a hose jet: he tips back onto his butt in the air, lands
+// sitting and slides off butt-first, then gets back up once he stops
+const TUMBLE_TILT = 1.0; // radians tipped back
+const TUMBLE_RAISE = 4; // lifts him so he sits on his butt, not his back
+const TUMBLE_SPEED = 8; // how quickly he tips over / gets back up (per second)
+const TUMBLE_LANDING_KEEP = 0.85; // share of horizontal speed kept landing on his butt
+const TUMBLE_FRICTION = 0.6; // share of the surface's friction while sliding on his butt (not on wet pavement)
+
 // Screen shake strengths (world units)
 const OBSTACLE_SHAKE = 5;
 const LAUNCH_SHAKE = 4; // at full power; falls off steeply for softer hops
@@ -125,6 +133,7 @@ export const hop = {
     powerMultiplier: 1, // < 1 after landing in mud
     superLeapArmed: false,
     lastSlimePad: null, // slime pad just bounced off: landing on it again sticks
+    tumbling: false, // knocked onto his butt by a hose jet, until he stops
     glideTime: 0, // seconds of glide left
     splashTimer: 0, // > 0 while watching a splash
     completeOnStop: false, // landed on the lily pad
@@ -149,8 +158,8 @@ const flipAxis = new THREE.Vector3();
 const flipQuaternion = new THREE.Quaternion();
 const flipMiddle = new THREE.Vector3();
 const flipMiddleTurned = new THREE.Vector3();
-// Wind-up crouch and idle croak state
-const pose = { crouch: 0, time: 0, nextCroak: CROAK_INTERVAL_MIN, croakTime: CROAK_TIME };
+// Wind-up crouch, idle croak and knocked-over (tumble, 0–1) state
+const pose = { crouch: 0, time: 0, nextCroak: CROAK_INTERVAL_MIN, croakTime: CROAK_TIME, tumble: 0 };
 
 function randomCroakInterval() {
     return CROAK_INTERVAL_MIN + Math.random() * (CROAK_INTERVAL_MAX - CROAK_INTERVAL_MIN);
@@ -265,12 +274,21 @@ export function updateModel(delta) {
     model.position.x = tremble * TREMBLE_AMOUNT * Math.sin(pose.time * TREMBLE_SPEED);
 
     // Lean back, away from the aim direction (tilting the whole player
-    // group around the axis to his right)
-    leanAxis.set(hop.heading.y, -hop.heading.x, 0);
-    if (pose.crouch > 0.001 && leanAxis.lengthSq() > 0) {
-        player.quaternion.setFromAxisAngle(leanAxis.normalize(), LEAN_BACK * pose.crouch);
+    // group around the axis to his right). Knocked over, he tips much
+    // further back, onto his butt, away from the way he's facing.
+    pose.tumble += ((hop.tumbling ? 1 : 0) - pose.tumble) * Math.min(1, TUMBLE_SPEED * delta);
+    if (pose.tumble > 0.001) {
+        const facing = model.rotation.y; // see face()
+        leanAxis.set(-Math.cos(facing), -Math.sin(facing), 0);
+        player.quaternion.setFromAxisAngle(leanAxis, TUMBLE_TILT * pose.tumble);
+        model.position.z += TUMBLE_RAISE * pose.tumble;
     } else {
-        player.quaternion.identity();
+        leanAxis.set(hop.heading.y, -hop.heading.x, 0);
+        if (pose.crouch > 0.001 && leanAxis.lengthSq() > 0) {
+            player.quaternion.setFromAxisAngle(leanAxis.normalize(), LEAN_BACK * pose.crouch);
+        } else {
+            player.quaternion.identity();
+        }
     }
 
     // Upright, facing his heading (set above); the victory flip changes this,
@@ -281,6 +299,8 @@ export function updateModel(delta) {
 
     // On the lily pad he bobs up and down with it on the water
     if (game.state === "levelComplete") model.position.z += getLilyPadBob();
+
+    updateFrogBlink(model, delta); // whether moving or standing still
 }
 
 const smooth = (t) => t * t * (3 - 2 * t);
@@ -343,6 +363,8 @@ export function placeAtStart() {
     hop.powerMultiplier = 1;
     hop.superLeapArmed = false;
     hop.lastSlimePad = null;
+    hop.tumbling = false;
+    pose.tumble = 0;
     hop.glideTime = 0;
     hop.splashTimer = 0;
     hop.completeOnStop = false;
@@ -366,6 +388,7 @@ function launch({ direction, power }) {
         setPowerupSlot(hop.powerup);
     }
     hop.lastSlimePad = null;
+    hop.tumbling = false;
     addStroke();
     startDeform(STRETCH_AMOUNT, STRETCH_TIME);
     shakeCamera(LAUNCH_SHAKE * power ** 3); // a kick you feel mostly on big hops
@@ -375,6 +398,7 @@ function launch({ direction, power }) {
 
 function rest() {
     hop.velocity.set(0, 0, 0);
+    hop.tumbling = false; // gets back up
     if (hop.completeOnStop) {
         completeLevel();
         return;
@@ -396,6 +420,7 @@ function fallInWater() {
     player.visible = false;
     hop.velocity.set(0, 0, 0);
     hop.glideTime = 0;
+    hop.tumbling = false;
     hop.splashTimer = SPLASH_PAUSE;
     showMessage("Splash! Try again");
 }
@@ -478,7 +503,15 @@ function applyObstacles(delta) {
     for (const obstacle of level.obstacles) {
         const result = obstacle.collide(frogView, delta);
         if (result) showTip(obstacle.kind);
-        if (result === "knocked") knocked = true;
+        if (result === "knocked") {
+            knocked = true;
+            // A hose jet knocks him onto his butt, facing the jet as he's
+            // pushed away from it
+            if (obstacle.kind === "hoseJet") {
+                hop.tumbling = true;
+                face(-hop.velocity.x, -hop.velocity.y);
+            }
+        }
     }
     if (!knocked) return;
 
@@ -550,8 +583,10 @@ function land(surface) {
 
     position.z = surface.z;
     hop.velocity.z = 0;
-    hop.velocity.x *= LANDING_SPEED_KEEP;
-    hop.velocity.y *= LANDING_SPEED_KEEP;
+    // On his butt he keeps more of his speed, to slide off
+    const keep = hop.tumbling ? TUMBLE_LANDING_KEEP : LANDING_SPEED_KEEP;
+    hop.velocity.x *= keep;
+    hop.velocity.y *= keep;
     startDeform(SQUASH_AMOUNT, SQUASH_TIME);
     if (surface.type !== "mud") {
         dust.play(position.x, position.y, position.z + 2, DUST_COLORS[surface.type] ?? DUST_COLORS.grass);
@@ -649,7 +684,8 @@ function updateSlide(delta) {
     const surface = surfaceAt(position.x, position.y);
 
     const speed = Math.hypot(hop.velocity.x, hop.velocity.y);
-    const friction = SURFACE_FRICTION[surface?.type] ?? SURFACE_FRICTION.grass;
+    let friction = SURFACE_FRICTION[surface?.type] ?? SURFACE_FRICTION.grass;
+    if (hop.tumbling && surface?.type !== "wetPavement") friction *= TUMBLE_FRICTION;
     const newSpeed = Math.max(0, speed - friction * delta);
     if (newSpeed < STOP_SPEED) {
         rest();
@@ -657,7 +693,9 @@ function updateSlide(delta) {
     }
     hop.velocity.x *= newSpeed / speed;
     hop.velocity.y *= newSpeed / speed;
-    face(hop.velocity.x, hop.velocity.y);
+    // Butt first when knocked over, else facing the way he slides
+    if (hop.tumbling) face(-hop.velocity.x, -hop.velocity.y);
+    else face(hop.velocity.x, hop.velocity.y);
 
     const nextX = position.x + hop.velocity.x * delta;
     const nextY = position.y + hop.velocity.y * delta;

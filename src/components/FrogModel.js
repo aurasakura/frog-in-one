@@ -31,6 +31,13 @@ const smile = new THREE.TorusGeometry(2.4, 0.3, 8, 24, Math.PI).rotateZ(Math.PI)
 const arm = new THREE.CapsuleGeometry(1.1, 2.6, 6, 12);
 const happyEyeArc = new THREE.TorusGeometry(1.7, 0.32, 8, 20, Math.PI); // upper half: a closed happy eye ^
 
+// Blinking: every few seconds the eyelids (body-coloured spheres over the
+// eyes) shut for a moment, now and then twice in a row
+const BLINK_GAP = [2, 5]; // seconds between blinks (random in range)
+const BLINK_TIME = 0.13; // eyes shut this long
+const DOUBLE_BLINK_CHANCE = 0.2;
+const LID_RADIUS = 3.5; // just covers the eye, pupil and shine
+
 const materialCache = new Map();
 function material(color, roughness = 0.55) {
     const key = `${color}:${roughness}`;
@@ -61,7 +68,7 @@ const v = (x, y, z) => new THREE.Vector3(x, y, z);
 export function FrogModel(colors = FROGGY_COLORS) {
     const frog = new THREE.Group();
     // Parts the expression changes (see setFrogExpression)
-    const face = { eyes: [], pupils: [], shines: [], happyEyes: [], mouth: null, wavingArm: null };
+    const face = { eyes: [], pupils: [], shines: [], happyEyes: [], lids: [], mouth: null, wavingArm: null };
 
     // Body and belly
     frog.add(blob(sphere, colors.body, BODY_CENTER, BODY_RADII));
@@ -82,6 +89,17 @@ export function FrogModel(colors = FROGGY_COLORS) {
         face.eyes.push(eye);
         face.pupils.push(pupil);
         face.shines.push(shine);
+
+        // Eyelid, shown while blinking, with a dark line where the eye shuts
+        const lid = blob(sphere, colors.body, v(side * 3.7, 10.8, 4.2), v(LID_RADIUS, LID_RADIUS, LID_RADIUS));
+        const lash = new THREE.Mesh(happyEyeArc, material("#2B2B2B", 0.4));
+        lash.position.set(side * 3.7, 11.2, 7.55);
+        lash.rotation.set(-0.15, 0, Math.PI); // lower half: a closed eye ‿
+        for (const part of [lid, lash]) {
+            part.visible = false;
+            frog.add(part);
+            face.lids.push(part);
+        }
 
         // Closed happy eye (^), shown instead of the open eye when grinning
         const happyEye = new THREE.Mesh(happyEyeArc, material("#2B2B2B", 0.4));
@@ -124,6 +142,7 @@ export function FrogModel(colors = FROGGY_COLORS) {
     face.mouth = mouth;
 
     frog.userData.face = face;
+    frog.userData.blink = { next: BLINK_GAP[0] + Math.random() * (BLINK_GAP[1] - BLINK_GAP[0]), shut: 0, again: false };
     return frog;
 }
 
@@ -140,4 +159,27 @@ export function setFrogExpression(frog, happiness, wave = 0, time = 0) {
     // Raise the arm out to the side and wave it from the shoulder
     const arm = face.wavingArm;
     arm.rotation.z = arm.userData.side * wave * (2.2 + 0.35 * Math.sin(time * 12));
+}
+
+// Blink now and then; call every frame. No blinking while the eyes are
+// closed in a grin.
+export function updateFrogBlink(frog, delta) {
+    const blink = frog.userData.blink;
+    if (blink.shut > 0) {
+        blink.shut -= delta;
+        if (blink.shut <= 0) {
+            // A double blink reopens only briefly before shutting again
+            blink.next = blink.again ? BLINK_TIME : BLINK_GAP[0] + Math.random() * (BLINK_GAP[1] - BLINK_GAP[0]);
+            blink.again = false;
+        }
+    } else {
+        blink.next -= delta;
+        if (blink.next <= 0) {
+            blink.shut = BLINK_TIME;
+            blink.again = blink.again === false && Math.random() < DOUBLE_BLINK_CHANCE;
+        }
+    }
+    const face = frog.userData.face;
+    const grinning = face.happyEyes[0].visible;
+    for (const lid of face.lids) lid.visible = blink.shut > 0 && !grinning;
 }
