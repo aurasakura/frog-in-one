@@ -1,22 +1,24 @@
+import { isTouchScreen } from "./input.js";
+
 // Powerup definitions (§6), shared by the flies and the HUD
 export const POWERUPS = {
     doubleHop: {
         name: "Double Hop",
         color: "#CC79A7", // magenta
         pattern: "bouncing",
-        hint: "Press E in mid-air to Double Hop",
+        hint: isTouchScreen ? "Tap the powerup in mid-air" : "Press E in mid-air to Double Hop",
     },
     glide: {
         name: "Glide",
         color: "#0072B2", // deep blue
         pattern: "drifting",
-        hint: "Hold E in mid-air to Glide",
+        hint: isTouchScreen ? "Hold the powerup in mid-air" : "Hold E in mid-air to Glide",
     },
     superLeap: {
         name: "Super Leap",
         color: "#E69F00", // orange-gold
         pattern: "darting",
-        hint: "Press E before a shot to Super Leap",
+        hint: isTouchScreen ? "Tap the powerup before a shot" : "Press E before a shot to Super Leap",
     },
 };
 

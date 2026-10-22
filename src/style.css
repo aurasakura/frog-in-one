@@ -387,6 +387,10 @@ body:not(:is([data-state="aiming"], [data-state="flying"], [data-state="sliding"
   }
 
   .message {
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    white-space: normal; /* long hints wrap rather than run off the screen */
+    text-align: center;
     font-size: 1.6rem;
   }
 

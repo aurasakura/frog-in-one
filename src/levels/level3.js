@@ -10,6 +10,8 @@
 // mud stops, then over to the front garden.
 // Shortcut: from the street's far curb, Glide over the flooded crossing
 // straight to the front garden.
+import { isTouchScreen } from "../input.js";
+
 export default {
     name: "Rainy Street",
     par: 7,
@@ -124,7 +126,7 @@ export default {
 
     props: [
         { type: "sign", col: -2, row: 1, icon: "wetPavement", text: "WET PAVEMENT\nYou slide far" },
-        { type: "sign", col: 3, row: 4, icon: "glide", text: "GLIDE\nHold E in mid-air" },
+        { type: "sign", col: 3, row: 4, icon: "glide", text: isTouchScreen ? "GLIDE\nHold the powerup in mid-air" : "GLIDE\nHold E in mid-air" },
         { type: "sign", col: -3, row: 9, icon: "puddle", text: "PUDDLES\nSame as water" },
         { type: "sign", col: 3, row: 11, icon: "hose", text: "HOSE\nDrip, then a jet" },
         { type: "bin", col: -2, row: -1 },

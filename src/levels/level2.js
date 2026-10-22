@@ -10,6 +10,8 @@
 // Safe route: patio → lawn → vegetable plot → finish.
 // Shortcut: Super Leap from the north edge of the lawn straight over the
 // vegetable plot onto the finish deck.
+import { isTouchScreen } from "../input.js";
+
 export default {
     name: "Garden",
     par: 5,
@@ -99,7 +101,7 @@ export default {
 
     props: [
         { type: "sign", col: 3, row: 1, icon: "mud", text: "MUD\nStops you. Next hop 60%" },
-        { type: "sign", col: -3, row: 0, icon: "superLeap", text: "SUPER LEAP\nPress E before a hop" },
+        { type: "sign", col: -3, row: 0, icon: "superLeap", text: isTouchScreen ? "SUPER LEAP\nTap the powerup before a hop" : "SUPER LEAP\nPress E before a hop" },
         { type: "sign", col: -3, row: 7, icon: "sprinkler", text: "SPRINKLER\nSpray pushes you" },
         { type: "bin", col: -3, row: -1 },
         { type: "mailbox", col: 3, row: -1 },
